@@ -1,14 +1,11 @@
-import { NextFunction, Request, Response } from "express";
+import { NextFunction, Response } from "express";
 import { verify } from "jsonwebtoken";
-import RequestPayload from "../interfaces/RequestPayload";
-
-interface Payload {
-  userId: string;
-}
+import RequestWithPayload from "../interfaces/RequestWithPayload";
+import Payload from "../interfaces/Payload";
 
 // Authorises token
 async function authorisation(
-  req: RequestPayload,
+  req: RequestWithPayload,
   res: Response,
   next: NextFunction
 ) {

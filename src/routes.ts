@@ -5,7 +5,7 @@ import generateToken from "./utils/generateToken";
 import authorisation from "./middleware/authorisation";
 import checkEmptyFields from "./middleware/checkEmptyFields";
 import registerDetailsValidation from "./middleware/registerDetailsValidation";
-import RequestPayload from "./interfaces/RequestPayload";
+import RequestWithPayload from "./interfaces/RequestWithPayload";
 
 const router = Router();
 
@@ -81,7 +81,7 @@ router.post("/login", checkEmptyFields, async (req: Request, res: Response) => {
 router.get(
   "/authorise",
   authorisation,
-  async (req: RequestPayload, res: Response) => {
+  async (req: RequestWithPayload, res: Response) => {
     try {
       return res.json(true);
     } catch (err: unknown) {

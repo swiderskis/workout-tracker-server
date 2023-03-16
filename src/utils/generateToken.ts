@@ -1,7 +1,8 @@
 import { sign } from "jsonwebtoken";
+import Payload from "../interfaces/Payload";
 
 function generateToken(userId: string) {
-  const payload = {
+  const payload: Payload = {
     userId: userId,
   };
 
