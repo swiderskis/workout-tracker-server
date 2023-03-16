@@ -1,8 +1,17 @@
 import { NextFunction, Request, Response } from "express";
 import { verify } from "jsonwebtoken";
+import RequestPayload from "../interfaces/RequestPayload";
+
+interface Payload {
+  userId: string;
+}
 
 // Authorises token
-async function authorisation(req: Request, res: Response, next: NextFunction) {
+async function authorisation(
+  req: RequestPayload,
+  res: Response,
+  next: NextFunction
+) {
   try {
     const token = req.header("token");
 
@@ -10,7 +19,9 @@ async function authorisation(req: Request, res: Response, next: NextFunction) {
       return res.status(401).json("No token");
     }
 
-    const tokenVerified = verify(token, process.env.JWT_SECRET);
+    const payload = verify(token, process.env.JWT_SECRET) as Payload;
+
+    req.userId = payload.userId;
 
     next();
   } catch (err: unknown) {
