@@ -16,16 +16,16 @@ CREATE TABLE
     );
 
 INSERT INTO
-    muscle_group_ (muscle_group_name)
+    muscle_group_ (muscle_group_id, muscle_group_name)
 VALUES
-    (1, 'Back'),
-    (2, 'Chest'),
-    (3, 'Legs'),
-    (4, 'Shoulders'),
-    (5, 'Arms'),
-    (6, 'Calves'),
-    (7, 'Forearms'),
-    (8, 'Abs');
+    (0, 'Back'),
+    (1, 'Chest'),
+    (2, 'Legs'),
+    (3, 'Shoulders'),
+    (4, 'Arms'),
+    (5, 'Calves'),
+    (6, 'Forearms'),
+    (7, 'Abs');
 
 CREATE TABLE
     equipment_ (
@@ -34,14 +34,14 @@ CREATE TABLE
     );
 
 INSERT INTO
-    equipment_ (equipment_name)
+    equipment_ (equipment_id, equipment_name)
 VALUES
-    (1, 'Barbell'),
-    (2, 'Dumbbell'),
-    (3, 'Machine'),
-    (4, 'Cable'),
-    (5, 'Bodyweight'),
-    (6, 'Kettlebell');
+    (0, 'Barbell'),
+    (1, 'Dumbbell'),
+    (2, 'Machine'),
+    (3, 'Cable'),
+    (4, 'Bodyweight'),
+    (5, 'Kettlebell');
 
 CREATE TABLE
     exercise_ (
@@ -49,7 +49,7 @@ CREATE TABLE
         exercise_name VARCHAR(50) UNIQUE NOT NULL,
         muscle_group_id INTEGER NOT NULL,
         user_id UUID,
-        CONSTRAINT fk_muscle_group_id FOREIGN KEY (m, m3uscle_group_id) REFERENCES muscle_group_ (muscle_group_id),
+        CONSTRAINT fk_muscle_group_id FOREIGN KEY (muscle_group_id) REFERENCES muscle_group_ (muscle_group_id),
         CONSTRAINT fk_user_id FOREIGN KEY (user_id) REFERENCES user_ (user_id)
     );
 

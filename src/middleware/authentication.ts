@@ -4,7 +4,7 @@ import RequestWithPayload from "../interfaces/RequestWithPayload";
 import Payload from "../interfaces/Payload";
 
 // Authorises token
-async function authorisation(
+async function authentication(
   req: RequestWithPayload,
   res: Response,
   next: NextFunction
@@ -26,4 +26,4 @@ async function authorisation(
   }
 }
 
-export default authorisation;
+export default authentication;

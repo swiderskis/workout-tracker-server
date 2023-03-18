@@ -7,7 +7,7 @@ function generateToken(userId: string) {
   };
 
   return sign(payload, process.env.JWT_SECRET, {
-    expiresIn: "1hr",
+    expiresIn: "1d",
   });
 }
 
