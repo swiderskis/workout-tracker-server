@@ -48,7 +48,7 @@ CREATE TABLE
         exercise_id SERIAL PRIMARY KEY,
         exercise_name VARCHAR(50) UNIQUE NOT NULL,
         muscle_group_id INTEGER NOT NULL,
-        user_id UUID,
+        user_id UUID NOT NULL,
         CONSTRAINT fk_muscle_group_id FOREIGN KEY (muscle_group_id) REFERENCES muscle_group_ (muscle_group_id),
         CONSTRAINT fk_user_id FOREIGN KEY (user_id) REFERENCES user_ (user_id)
     );
