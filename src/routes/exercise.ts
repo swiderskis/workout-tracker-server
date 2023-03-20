@@ -8,6 +8,7 @@ const exercise = Router();
 
 interface ExerciseInformation {
   exerciseId: number;
+  exerciseName: string;
   muscleGroupId: number;
   equipmentIds: number[];
 }
@@ -52,15 +53,17 @@ exercise.get(
     try {
       // Get list of exercises for user, stores them as arrays
       const exerciseList = await pool.query(
-        "SELECT exercise_id, muscle_group_id FROM exercise_ WHERE user_id = $1",
+        "SELECT exercise_id, exercise_name, muscle_group_id FROM exercise_ WHERE user_id = $1",
         [userId]
       );
 
       const exerciseIds = [];
+      const exerciseNames = [];
       const muscleGroupIds = [];
 
       exerciseList.rows.forEach((index) => {
         exerciseIds.push(index.exercise_id);
+        exerciseNames.push(index.exercise_name);
         muscleGroupIds.push(index.muscle_group_id);
       });
 
@@ -73,6 +76,7 @@ exercise.get(
         // Assigns exercise and equipment information to response
         response.push({
           exerciseId: exerciseIds[i],
+          exerciseName: exerciseNames[i],
           muscleGroupId: muscleGroupIds[i],
           equipmentIds: equipmentIds,
         });
