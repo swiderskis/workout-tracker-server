@@ -6,7 +6,7 @@ import checkEmptyFields from "../middleware/checkEmptyFields";
 
 const exercise = Router();
 
-interface ExerciseListResponse {
+interface ExerciseInformation {
   exerciseId: number;
   muscleGroupId: number;
   equipmentIds: number[];
@@ -44,7 +44,7 @@ exercise.post(
 
 // Get list of exercises user has added
 exercise.get(
-  "/",
+  "/view",
   authentication,
   async (req: RequestWithPayload, res: Response) => {
     const userId = req.userId;
@@ -64,7 +64,7 @@ exercise.get(
         muscleGroupIds.push(index.muscle_group_id);
       });
 
-      const response: ExerciseListResponse[] = [];
+      const response: ExerciseInformation[] = [];
 
       for (let i = 0; i < exerciseIds.length; i++) {
         // Get array of equipment for each exercise
@@ -78,7 +78,7 @@ exercise.get(
         });
       }
 
-      return res.json(exerciseList.rows);
+      return res.json(response);
     } catch (err: unknown) {
       return res.status(500).json("Server error");
     }
