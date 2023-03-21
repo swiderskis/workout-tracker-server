@@ -61,8 +61,3 @@ CREATE TABLE
         CONSTRAINT fk_exercise_id FOREIGN KEY (exercise_id) REFERENCES exercise_ (exercise_id),
         CONSTRAINT fk_equipment_id FOREIGN KEY (equipment_id) REFERENCES equipment_ (equipment_id)
     );
-
--- INSERT INTO
---     exercise_ (exercise_name, exercise_sets, reps, user_id)
--- VALUES
---     ('Back Squat', 3, '[12, 12]', 'c7532a97-c93a-4145-a5c8-ceeeb5384545');

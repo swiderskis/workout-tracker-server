@@ -6,10 +6,13 @@ import checkEmptyFields from "../middleware/checkEmptyFields";
 
 const exercise = Router();
 
-interface ExerciseInformation {
+interface ExerciseListInfo {
   exerciseId: number;
   exerciseName: string;
   muscleGroupId: number;
+}
+
+interface ExerciseInformation extends ExerciseListInfo {
   equipmentIds: number[];
 }
 
@@ -19,11 +22,10 @@ exercise.post(
   checkEmptyFields,
   authentication,
   async (req: RequestWithPayload, res: Response) => {
-    try {
-      const { exerciseName, muscleGroupSelection, equipmentSelection } =
-        req.body;
-      const userId = req.userId;
+    const { exerciseName, muscleGroupSelection, equipmentSelection } = req.body;
+    const userId = req.userId;
 
+    try {
       const addExercise = await pool.query(
         "INSERT INTO exercise_ (exercise_name, muscle_group_id, user_id) VALUES ($1, $2, $3) RETURNING *",
         [exerciseName, muscleGroupSelection, userId]
@@ -36,7 +38,7 @@ exercise.post(
         );
       });
 
-      return res.status(200).json("Exercise added");
+      return res.json("Exercise added");
     } catch (err: unknown) {
       return res.status(500).json("Server error");
     }
@@ -53,34 +55,21 @@ exercise.get(
     try {
       // Get list of exercises for user, stores them as arrays
       const exerciseList = await pool.query(
-        "SELECT exercise_id, exercise_name, muscle_group_id FROM exercise_ WHERE user_id = $1",
+        "SELECT exercise_id, exercise_name, muscle_group_id FROM exercise_ WHERE user_id = $1 ORDER BY exercise_id",
         [userId]
       );
 
-      const exerciseIds = [];
-      const exerciseNames = [];
-      const muscleGroupIds = [];
+      const response: ExerciseListInfo[] = [];
 
-      exerciseList.rows.forEach((index) => {
-        exerciseIds.push(index.exercise_id);
-        exerciseNames.push(index.exercise_name);
-        muscleGroupIds.push(index.muscle_group_id);
+      exerciseList.rows.forEach((element) => {
+        const responseElement = <ExerciseListInfo>{};
+
+        responseElement.exerciseId = element.exercise_id;
+        responseElement.exerciseName = element.exercise_name;
+        responseElement.muscleGroupId = element.muscle_group_id;
+
+        response.push(responseElement);
       });
-
-      const response: ExerciseInformation[] = [];
-
-      for (let i = 0; i < exerciseIds.length; i++) {
-        // Get array of equipment for each exercise
-        const equipmentIds = await getEquipmentIds(exerciseIds[i]);
-
-        // Assigns exercise and equipment information to response
-        response.push({
-          exerciseId: exerciseIds[i],
-          exerciseName: exerciseNames[i],
-          muscleGroupId: muscleGroupIds[i],
-          equipmentIds: equipmentIds,
-        });
-      }
 
       return res.json(response);
     } catch (err: unknown) {
@@ -89,18 +78,126 @@ exercise.get(
   }
 );
 
-// Gets equipmentIds for a given exerciseId
-async function getEquipmentIds(exerciseId: number) {
-  const equipmentIds = [];
-  const equipmentIdsRows = await pool.query(
-    "SELECT equipment_id FROM exercise_equipment_link_ WHERE exercise_id = $1",
-    [exerciseId]
-  );
-  equipmentIdsRows.rows.forEach((index) =>
-    equipmentIds.push(index.equipment_id)
-  );
+// Gets exercise information for a given exercise id
+exercise.get(
+  "/view/:id",
+  authentication,
+  async (req: RequestWithPayload, res: Response) => {
+    const userId = req.userId;
+    const exerciseId = parseInt(req.params.id);
 
-  return equipmentIds;
-}
+    try {
+      // Ensure user accessing exercise info matches the user that added the exercise
+      const exerciseUserIdRes = await pool.query(
+        "SELECT user_id FROM exercise_ WHERE exercise_id = $1",
+        [exerciseId]
+      );
+
+      const exerciseUserId = exerciseUserIdRes.rows[0].user_id;
+
+      if (userId !== exerciseUserId)
+        return res
+          .status(403)
+          .json("You are not permitted to view or edit this exercise");
+
+      // Get info for exercise
+      const exerciseInfo = await pool.query(
+        "SELECT exercise_name, muscle_group_id FROM exercise_ WHERE exercise_id = $1",
+        [exerciseId]
+      );
+
+      const exerciseName = exerciseInfo.rows[0].exercise_name;
+      const muscleGroupId = exerciseInfo.rows[0].muscle_group_id;
+      const equipmentIds = [];
+
+      const equipmentIdsRows = await pool.query(
+        "SELECT equipment_id FROM exercise_equipment_link_ WHERE exercise_id = $1",
+        [exerciseId]
+      );
+
+      equipmentIdsRows.rows.forEach((element) =>
+        equipmentIds.push(element.equipment_id)
+      );
+
+      const response: ExerciseInformation = {
+        exerciseId,
+        exerciseName,
+        muscleGroupId,
+        equipmentIds,
+      };
+
+      return res.json(response);
+    } catch (err: unknown) {
+      return res.status(500).json("Server error");
+    }
+  }
+);
+
+// Updates exercise information for a given exercise id
+exercise.put(
+  "/update/:id",
+  checkEmptyFields,
+  authentication,
+  async (req: RequestWithPayload, res: Response) => {
+    const userId = req.userId;
+    const exerciseId = parseInt(req.params.id);
+    const { exerciseName, muscleGroupSelection, equipmentSelection } = req.body;
+
+    try {
+      const updatedExercise = await pool.query(
+        "UPDATE exercise_ SET (exercise_name, muscle_group_id) = ($1, $2) WHERE exercise_id = $3 RETURNING *",
+        [exerciseName, muscleGroupSelection, exerciseId]
+      );
+
+      // Gets current equipment selection
+      const currEquipmentSelectionRows = await pool.query(
+        "SELECT equipment_id FROM exercise_equipment_link_ WHERE exercise_id = $1",
+        [exerciseId]
+      );
+
+      const currEquipmentSelection = [];
+
+      currEquipmentSelectionRows.rows.forEach((element) =>
+        currEquipmentSelection.push(element.equipment_id)
+      );
+
+      // Compares current and new equipment selection, inserts and deletes rows based on changes
+      const equipmentSelectionAdd = [];
+      const equipmentSelectionRemove = [];
+
+      equipmentSelection.filter((element: number) =>
+        currEquipmentSelection.includes(element)
+          ? null
+          : equipmentSelectionAdd.push(element)
+      );
+
+      currEquipmentSelection.filter((element) =>
+        equipmentSelection.includes(element)
+          ? null
+          : equipmentSelectionRemove.push(element)
+      );
+
+      equipmentSelectionAdd.forEach(
+        async (element) =>
+          await pool.query(
+            "INSERT INTO exercise_equipment_link_ (exercise_id, equipment_id) VALUES ($1, $2)",
+            [exerciseId, element]
+          )
+      );
+
+      equipmentSelectionRemove.forEach(
+        async (element) =>
+          await pool.query(
+            "DELETE FROM exercise_equipment_link_ WHERE exercise_id = $1 AND equipment_id = $2",
+            [exerciseId, element]
+          )
+      );
+
+      return res.json("Exercise updated");
+    } catch (err: unknown) {
+      return res.status(500).json("Server error");
+    }
+  }
+);
 
 export default exercise;
