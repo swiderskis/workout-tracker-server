@@ -9,5 +9,5 @@ The client side repo of this web app can be found [here](https://github.com/swid
 ## Setup
 
 - Run the database.sql script on Postgres in order to create the required database
-- Modify the postgres user credentials in database.ts to a user with the required permissions to allow the app to use the created database
+- Modify thep Postgres user credentials in database.ts to a user with the required permissions, to allow the app to use the created database
 - Create a .env file in the root of the server folder, add an environment variable named JWT_SECRET, and set it to any desired value
