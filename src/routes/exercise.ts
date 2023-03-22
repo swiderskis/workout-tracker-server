@@ -38,7 +38,7 @@ exercise.post(
         );
       });
 
-      return res.json("Exercise added");
+      return res.json("Exercise" + exerciseName + "added");
     } catch (err: unknown) {
       return res.status(500).json("Server error");
     }
@@ -139,13 +139,12 @@ exercise.put(
   checkEmptyFields,
   authentication,
   async (req: RequestWithPayload, res: Response) => {
-    const userId = req.userId;
     const exerciseId = parseInt(req.params.id);
     const { exerciseName, muscleGroupSelection, equipmentSelection } = req.body;
 
     try {
-      const updatedExercise = await pool.query(
-        "UPDATE exercise_ SET (exercise_name, muscle_group_id) = ($1, $2) WHERE exercise_id = $3 RETURNING *",
+      await pool.query(
+        "UPDATE exercise_ SET (exercise_name, muscle_group_id) = ($1, $2) WHERE exercise_id = $3",
         [exerciseName, muscleGroupSelection, exerciseId]
       );
 
@@ -193,7 +192,33 @@ exercise.put(
           )
       );
 
-      return res.json("Exercise updated");
+      return res.json("Exercise" + exerciseName + "updated");
+    } catch (err: unknown) {
+      return res.status(500).json("Server error");
+    }
+  }
+);
+
+// Deletes data about an exercise for a given exercise id
+exercise.delete(
+  "/delete/:id",
+  authentication,
+  async (req: RequestWithPayload, res: Response) => {
+    const exerciseId = parseInt(req.params.id);
+    try {
+      await pool.query(
+        "DELETE FROM exercise_equipment_link_ WHERE exercise_id = $1",
+        [exerciseId]
+      );
+
+      const deletedExercise = await pool.query(
+        "DELETE FROM exercise_ WHERE exercise_id = $1 RETURNING *",
+        [exerciseId]
+      );
+
+      return res.json(
+        "Exercise" + deletedExercise.rows[0].exercise_name + "deleted"
+      );
     } catch (err: unknown) {
       return res.status(500).json("Server error");
     }
