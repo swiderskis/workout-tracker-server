@@ -82,6 +82,7 @@ loginRegister.post(
   }
 );
 
+// Authenticates user token
 loginRegister.get(
   "/authenticate",
   authentication,

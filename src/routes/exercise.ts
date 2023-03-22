@@ -93,6 +93,9 @@ exercise.get(
         [exerciseId]
       );
 
+      if (exerciseUserIdRes.rows.length === 0)
+        return res.status(400).json("This exercise no longer exists");
+
       const exerciseUserId = exerciseUserIdRes.rows[0].user_id;
 
       if (userId !== exerciseUserId)
@@ -207,6 +210,14 @@ exercise.delete(
     const exerciseId = parseInt(req.params.id);
 
     try {
+      const exerciseExists = await pool.query(
+        "SELECT exercise_id FROM exercise_ WHERE exercise_id = $1",
+        [exerciseId]
+      );
+
+      if (exerciseExists.rows.length === 0)
+        return res.status(400).json("This exercise no longer exists");
+
       await pool.query(
         "DELETE FROM exercise_equipment_link_ WHERE exercise_id = $1",
         [exerciseId]
