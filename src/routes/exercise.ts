@@ -205,6 +205,7 @@ exercise.delete(
   authentication,
   async (req: RequestWithPayload, res: Response) => {
     const exerciseId = parseInt(req.params.id);
+
     try {
       await pool.query(
         "DELETE FROM exercise_equipment_link_ WHERE exercise_id = $1",
