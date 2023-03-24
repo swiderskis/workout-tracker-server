@@ -61,3 +61,41 @@ CREATE TABLE
         CONSTRAINT fk_exercise_id FOREIGN KEY (exercise_id) REFERENCES exercise_ (exercise_id),
         CONSTRAINT fk_equipment_id FOREIGN KEY (equipment_id) REFERENCES equipment_ (equipment_id)
     );
+
+CREATE TABLE
+    day_ (
+        day_id INTEGER PRIMARY KEY,
+        day_name VARCHAR(50) NOT NULL
+    );
+
+INSERT INTO
+    day_ (day_id, day_name)
+VALUES
+    (0, 'Monday'),
+    (1, 'Tuesday'),
+    (2, 'Wednesday'),
+    (3, 'Thursday'),
+    (4, 'Friday'),
+    (5, 'Saturday'),
+    (6, 'Sunday');
+
+CREATE TABLE
+    workout_exercise_ (
+        workout_exercise_id SERIAL PRIMARY KEY,
+        exercise_equipment_link_id INTEGER NOT NULL,
+        sets INTEGER NOT NULL,
+        reps INT4RANGE NOT NULL,
+        CONSTRAINT fk_exercise_equipment_link_id FOREIGN KEY (exercise_equipment_link_id) REFERENCES exercise_equipment_link_ (exercise_equipment_link_id)
+    );
+
+CREATE TABLE
+    workout_ (
+        workout_id SERIAL PRIMARY KEY,
+        workout_name VARCHAR(50) NOT NULL,
+        day_id INTEGER NOT NULL,
+        workout_exercise_id INTEGER NOT NULL,
+        user_id UUID NOT NULL,
+        CONSTRAINT fk_day_id FOREIGN KEY (day_id) REFERENCES day_ (day_id),
+        CONSTRAINT fk_workout_exercise_id FOREIGN KEY (workout_exercise_id) REFERENCES workout_exercise_ (workout_exercise_id),
+        CONSTRAINT fk_user_id FOREIGN KEY (user_id) REFERENCES user_ (user_id)
+    );
