@@ -2,6 +2,8 @@ CREATE DATABASE workout_tracker;
 
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
+\c workout_tracker;
+
 CREATE TABLE
     user_ (
         user_id UUID PRIMARY KEY DEFAULT gen_random_uuid (),
