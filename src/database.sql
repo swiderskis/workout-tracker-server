@@ -1,8 +1,8 @@
 CREATE DATABASE workout_tracker;
 
-CREATE EXTENSION IF NOT EXISTS pgcrypto;
-
 \c workout_tracker;
+
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
 CREATE TABLE
     user_ (
