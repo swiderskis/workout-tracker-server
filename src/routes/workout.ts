@@ -2,6 +2,7 @@ import { Response, Router } from "express";
 import pool from "../database";
 import RequestWithPayload from "../interfaces/RequestWithPayload";
 import authentication from "../middleware/authentication";
+import checkEmptyFields from "../middleware/checkEmptyFields";
 
 const workout = Router();
 
@@ -60,6 +61,20 @@ workout.get(
       }
 
       return res.json(response);
+    } catch (err: unknown) {
+      return res.status(500).json("Server error");
+    }
+  }
+);
+
+workout.post(
+  "/add",
+  checkEmptyFields,
+  authentication,
+  async (req: RequestWithPayload, res: Response) => {
+    const userId = req.userId;
+
+    try {
     } catch (err: unknown) {
       return res.status(500).json("Server error");
     }

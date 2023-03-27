@@ -87,7 +87,9 @@ CREATE TABLE
         exercise_equipment_link_id INTEGER NOT NULL,
         sets INTEGER NOT NULL,
         reps INTEGER NOT NULL,
-        CONSTRAINT fk_exercise_equipment_link_id FOREIGN KEY (exercise_equipment_link_id) REFERENCES exercise_equipment_link_ (exercise_equipment_link_id)
+        workout_id INTEGER NOT NULL,
+        CONSTRAINT fk_exercise_equipment_link_id FOREIGN KEY (exercise_equipment_link_id) REFERENCES exercise_equipment_link_ (exercise_equipment_link_id),
+        CONSTRAINT fk_workout_id FOREIGN KEY (workout_id) REFERENCES workout_ (workout_id)
     );
 
 CREATE TABLE
@@ -95,9 +97,7 @@ CREATE TABLE
         workout_id SERIAL PRIMARY KEY,
         workout_name VARCHAR(50) NOT NULL,
         day_id INTEGER NOT NULL,
-        workout_exercise_id INTEGER NOT NULL,
         user_id UUID NOT NULL,
         CONSTRAINT fk_day_id FOREIGN KEY (day_id) REFERENCES day_ (day_id),
-        CONSTRAINT fk_workout_exercise_id FOREIGN KEY (workout_exercise_id) REFERENCES workout_exercise_ (workout_exercise_id),
         CONSTRAINT fk_user_id FOREIGN KEY (user_id) REFERENCES user_ (user_id)
     );
