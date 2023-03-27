@@ -86,7 +86,7 @@ CREATE TABLE
         workout_exercise_id SERIAL PRIMARY KEY,
         exercise_equipment_link_id INTEGER NOT NULL,
         sets INTEGER NOT NULL,
-        reps INT4RANGE NOT NULL,
+        reps INTEGER NOT NULL,
         CONSTRAINT fk_exercise_equipment_link_id FOREIGN KEY (exercise_equipment_link_id) REFERENCES exercise_equipment_link_ (exercise_equipment_link_id)
     );
 
