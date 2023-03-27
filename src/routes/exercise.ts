@@ -84,7 +84,7 @@ exercise.get(
   authentication,
   async (req: RequestWithPayload, res: Response) => {
     const userId = req.userId;
-    const exerciseId = parseInt(req.params.id);
+    const exerciseId = Number(req.params.id);
 
     try {
       // Ensure user accessing exercise info matches the user that added the exercise
@@ -142,7 +142,7 @@ exercise.put(
   checkEmptyFields,
   authentication,
   async (req: RequestWithPayload, res: Response) => {
-    const exerciseId = parseInt(req.params.id);
+    const exerciseId = Number(req.params.id);
     const { exerciseName, muscleGroupSelection, equipmentSelection } = req.body;
 
     try {
@@ -207,7 +207,7 @@ exercise.delete(
   "/delete/:id",
   authentication,
   async (req: RequestWithPayload, res: Response) => {
-    const exerciseId = parseInt(req.params.id);
+    const exerciseId = Number(req.params.id);
 
     try {
       const exerciseExists = await pool.query(
