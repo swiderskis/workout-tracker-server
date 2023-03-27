@@ -74,7 +74,27 @@ workout.post(
   async (req: RequestWithPayload, res: Response) => {
     const userId = req.userId;
 
+    const { workoutName, workoutDay, workoutExercises } = req.body;
+
     try {
+      const addWorkout = await pool.query(
+        "INSERT INTO workout_ (workout_name, day_id, user_id) VALUES ($1, $2, $3) RETURNING *",
+        [workoutName, workoutDay, userId]
+      );
+
+      for (let i = 0; i < workoutExercises.length; i++) {
+        await pool.query(
+          "INSERT INTO workout_exercise_ (exercise_equipment_link_id, sets, reps, workout_id) VALUES ($1, $2, $3, $4)",
+          [
+            workoutExercises[i].exerciseEquipmentLinkId,
+            workoutExercises[i].sets,
+            workoutExercises[i].reps,
+            addWorkout.rows[0].workout_id,
+          ]
+        );
+      }
+
+      return res.json("Exercise" + addWorkout.rows[0].workout_name + "added");
     } catch (err: unknown) {
       return res.status(500).json("Server error");
     }

@@ -81,7 +81,7 @@ VALUES
     (5, 'Saturday'),
     (6, 'Sunday');
 
-    CREATE TABLE
+CREATE TABLE
     workout_ (
         workout_id SERIAL PRIMARY KEY,
         workout_name VARCHAR(50) NOT NULL,
