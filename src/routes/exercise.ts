@@ -218,6 +218,29 @@ exercise.delete(
       if (exerciseExists.rows.length === 0)
         return res.status(400).json("This exercise no longer exists");
 
+      const equipmentLinks = await pool.query(
+        "SELECT exercise_equipment_link_id FROM exercise_equipment_link_ WHERE exercise_id = $1",
+        [exerciseId]
+      );
+
+      const linkIds = [];
+
+      equipmentLinks.rows.forEach((element) =>
+        linkIds.push(element.exercise_equipment_link_id)
+      );
+
+      for (let i = 0; i < linkIds.length; i++) {
+        const workoutContainsExercise = await pool.query(
+          "SELECT * FROM workout_exercise_ WHERE exercise_equipment_link_id = $1",
+          [linkIds[i]]
+        );
+
+        if (workoutContainsExercise.rows.length > 0)
+          return res
+            .status(400)
+            .json("This exercise is currently in use in one of your routines");
+      }
+
       await pool.query(
         "DELETE FROM exercise_equipment_link_ WHERE exercise_id = $1",
         [exerciseId]
@@ -232,6 +255,7 @@ exercise.delete(
         "Exercise" + deletedExercise.rows[0].exercise_name + "deleted"
       );
     } catch (err: unknown) {
+      console.log(err);
       return res.status(500).json("Server error");
     }
   }
