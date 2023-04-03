@@ -82,13 +82,22 @@ VALUES
     (6, 'Sunday');
 
 CREATE TABLE
+    workout_routine_ (
+        workout_routine_id SERIAL PRIMARY KEY,
+        start_date DATE NOT NULL,
+        end_date DATE NOT NULL,
+        user_id UUID NOT NULL,
+        CONSTRAINT fk_user_id FOREIGN KEY (user_id) REFERENCES user_ (user_id)
+    );
+
+CREATE TABLE
     workout_ (
         workout_id SERIAL PRIMARY KEY,
         workout_name VARCHAR(50) NOT NULL,
         day_id INTEGER NOT NULL,
-        user_id UUID NOT NULL,
+        workout_routine_id INTEGER NOT NULL,
         CONSTRAINT fk_day_id FOREIGN KEY (day_id) REFERENCES day_ (day_id),
-        CONSTRAINT fk_user_id FOREIGN KEY (user_id) REFERENCES user_ (user_id)
+        CONSTRAINT fk_workout_routine_id FOREIGN KEY (workout_routine_id) REFERENCES workout_routine_ (workout_routine_id)
     );
 
 CREATE TABLE
