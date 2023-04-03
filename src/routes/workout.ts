@@ -162,7 +162,7 @@ workout.get(
       const response: RoutineDetails[] = [];
 
       const routineList = await pool.query(
-        "SELECT workout_routine_id, start_date, end_date FROM workout_routine_ WHERE user_id = $1",
+        "SELECT workout_routine_id, start_date, end_date FROM workout_routine_ WHERE user_id = $1 ORDER BY start_date",
         [userId]
       );
 
@@ -196,7 +196,7 @@ workout.get(
     const routineId = Number(req.params.id);
 
     try {
-      // Get routinie start and end dates
+      // Get routine start and end dates
       const routineDetails = await pool.query(
         "SELECT start_date, end_date, user_id FROM workout_routine_ WHERE workout_routine_id = $1",
         [routineId]
@@ -255,7 +255,7 @@ workout.get(
           );
 
           const exerciseId = exerciseLink.rows[0].exercise_id;
-          const equipmentId = exerciseLink.rows[0].equipmentId;
+          const equipmentId = exerciseLink.rows[0].equipment_id;
 
           const exercise = await pool.query(
             "SELECT exercise_name, muscle_group_id FROM exercise_ WHERE exercise_id = $1",
@@ -283,6 +283,135 @@ workout.get(
       }
 
       return res.json(routine);
+    } catch (err: unknown) {
+      return res.status(500).json("Server error");
+    }
+  }
+);
+
+// Updates routine information
+workout.put(
+  "/routine/:id",
+  checkEmptyFields,
+  authentication,
+  async (req: RequestWithPayload, res: Response) => {
+    const userId = req.userId;
+    const routineId = Number(req.params.id);
+    const routine: WorkoutRoutine = req.body;
+
+    try {
+      // Validate user that created the routine is modifying it
+      const routineQuery = await pool.query(
+        "SELECT user_id FROM workout_routine_ WHERE workout_routine_id = $1",
+        [routineId]
+      );
+
+      const exerciseUserId = routineQuery.rows[0].user_id;
+
+      if (userId !== exerciseUserId)
+        return res
+          .status(403)
+          .json("You are not permitted to view or edit this routine");
+
+      // Update start and end dates
+      await pool.query(
+        "UPDATE workout_routine_ SET (start_date, end_date) = ($1, $2) WHERE workout_routine_id = $3",
+        [routine.startDate, routine.endDate, routineId]
+      );
+
+      for (let i = 0; i < routine.workoutRoutineDays.length; i++) {
+        // Update workout name and day
+        const workoutName = routine.workoutRoutineDays[i].workoutName;
+        const day = routine.workoutRoutineDays[i].day;
+
+        await pool.query(
+          "UPDATE workout_ SET workout_name = $1 WHERE day_id = $2",
+          [workoutName, day]
+        );
+
+        // Update exercises in workout
+        const workoutExercises = routine.workoutRoutineDays[i].workoutExercises;
+
+        const workoutIdQuery = await pool.query(
+          "SELECT workout_id FROM workout_ WHERE day_id = $1",
+          [day]
+        );
+
+        const workoutId = workoutIdQuery.rows[0].workout_id;
+
+        const exerciseLinksToAdd = [];
+        const exerciseLinksToRemove = [];
+        const exerciseLinksToUpdate = [];
+
+        // Get current exercise link ids
+        const currWorkoutExerciseLinks = await pool.query(
+          "SELECT exercise_equipment_link_id FROM workout_exercise_ WHERE workout_id = $1",
+          [workoutId]
+        );
+
+        const currLinkIds = [];
+
+        currWorkoutExerciseLinks.rows.forEach((element) => {
+          currLinkIds.push(element.exercise_equipment_link_id);
+        });
+
+        // Get new exercise link ids
+        const newLinkIds = [];
+
+        for (let j = 0; j < workoutExercises.length; j++) {
+          newLinkIds.push(workoutExercises[j].exerciseEquipmentLinkId);
+        }
+
+        // Compare current and new link ids, insert and delete rows based on changes
+        currLinkIds.filter((element) =>
+          newLinkIds.includes(element)
+            ? exerciseLinksToUpdate.push(element)
+            : exerciseLinksToRemove.push(element)
+        );
+
+        newLinkIds.filter((element) =>
+          currLinkIds.includes(element)
+            ? null
+            : exerciseLinksToAdd.push(element)
+        );
+
+        for (let j = 0; j < workoutExercises.length; j++) {
+          const exerciseEquipmentLinkId =
+            workoutExercises[j].exerciseEquipmentLinkId;
+          const sets = workoutExercises[j].sets;
+          const reps = workoutExercises[j].reps;
+
+          // Insert new exercises
+          if (
+            exerciseLinksToAdd.includes(
+              workoutExercises[j].exerciseEquipmentLinkId
+            )
+          )
+            await pool.query(
+              "INSERT INTO workout_exercise_ (exercise_equipment_link_id, sets, reps, workout_id) VALUES ($1, $2, $3, $4)",
+              [exerciseEquipmentLinkId, sets, reps, workoutId]
+            );
+
+          // Update existing exercises
+          if (
+            exerciseLinksToUpdate.includes(
+              workoutExercises[j].exerciseEquipmentLinkId
+            )
+          )
+            await pool.query(
+              "UPDATE workout_exercise_ SET sets = $1, reps = $2 WHERE exercise_equipment_link_id = $3 AND workout_id = $4",
+              [sets, reps, exerciseEquipmentLinkId, workoutId]
+            );
+        }
+
+        // Delete removed exercises
+        exerciseLinksToRemove.forEach(async (element) => {
+          await pool.query(
+            "DELETE FROM workout_exercise_ WHERE exercise_equipment_link_id = $1 AND workout_id = $2",
+            [element, workoutId]
+          );
+        });
+      }
     } catch (err: unknown) {
       return res.status(500).json("Server error");
     }
