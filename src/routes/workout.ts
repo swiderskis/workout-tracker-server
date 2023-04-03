@@ -14,6 +14,28 @@ interface WorkoutExerciseInfo {
   equipmentIds: number[];
 }
 
+interface WorkoutExerciseSelection {
+  exerciseId: number;
+  exerciseName: string;
+  muscleGroupId: number;
+  sets: number;
+  reps: number;
+  exerciseEquipmentLinkId: number;
+  equipmentId: number;
+}
+
+interface WorkoutRoutineDay {
+  day: number;
+  workoutName: string;
+  workoutExercises: WorkoutExerciseSelection[];
+}
+
+interface WorkoutRoutine {
+  startDate: Date;
+  endDate: Date;
+  workoutRoutineDays: WorkoutRoutineDay[];
+}
+
 // Gets list of exercises user has added
 workout.get(
   "/exercise-list",
@@ -67,34 +89,56 @@ workout.get(
   }
 );
 
+// Adds user created workout routine into database
 workout.post(
-  "/add",
+  "/create-routine",
   checkEmptyFields,
   authentication,
   async (req: RequestWithPayload, res: Response) => {
     const userId = req.userId;
-
-    const { workoutName, workoutDay, workoutExercises } = req.body;
+    const routine: WorkoutRoutine = req.body;
 
     try {
-      const addWorkout = await pool.query(
-        "INSERT INTO workout_ (workout_name, day_id, user_id) VALUES ($1, $2, $3) RETURNING *",
-        [workoutName, workoutDay, userId]
+      // Inserts workout routine details into database
+      const startDate = new Date(routine.startDate);
+      const startYear = startDate.getFullYear();
+      const startMonth = startDate.getMonth() + 1;
+      const startDay = startDate.getDate();
+
+      const endDate = new Date(routine.endDate);
+      const endYear = endDate.getFullYear();
+      const endMonth = endDate.getMonth() + 1;
+      const endDay = endDate.getDate();
+
+      const addRoutine = await pool.query(
+        "INSERT INTO workout_routine_ (start_date, end_date, user_id) VALUES (make_date($1, $2, $3), make_date($4, $5, $6), $7) RETURNING *",
+        [startYear, startMonth, startDay, endYear, endMonth, endDay, userId]
       );
 
-      for (let i = 0; i < workoutExercises.length; i++) {
-        await pool.query(
-          "INSERT INTO workout_exercise_ (exercise_equipment_link_id, sets, reps, workout_id) VALUES ($1, $2, $3, $4)",
-          [
-            workoutExercises[i].exerciseEquipmentLinkId,
-            workoutExercises[i].sets,
-            workoutExercises[i].reps,
-            addWorkout.rows[0].workout_id,
-          ]
-        );
-      }
+      // Inserts workout details for each day into database
+      for (let i = 0; i < routine.workoutRoutineDays.length; i++) {
+        const { workoutName, day, workoutExercises } =
+          routine.workoutRoutineDays[i];
 
-      return res.json("Exercise" + addWorkout.rows[0].workout_name + "added");
+        const addWorkout = await pool.query(
+          "INSERT INTO workout_ (workout_name, day_id, workout_routine_id) VALUES ($1, $2, $3) RETURNING *",
+          [workoutName, day, addRoutine.rows[0].workout_routine_id]
+        );
+
+        // Inserts exercise details for each workout into database
+        for (let j = 0; j < workoutExercises.length; j++) {
+          await pool.query(
+            "INSERT INTO workout_exercise_ (exercise_equipment_link_id, sets, reps, workout_id) VALUES ($1, $2, $3, $4)",
+            [
+              workoutExercises[j].exerciseEquipmentLinkId,
+              workoutExercises[j].sets,
+              workoutExercises[j].reps,
+              addWorkout.rows[0].workout_id,
+            ]
+          );
+        }
+      }
+      return res.json("Routine added");
     } catch (err: unknown) {
       return res.status(500).json("Server error");
     }
