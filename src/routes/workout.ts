@@ -421,6 +421,8 @@ workout.put(
             [element, workoutId]
           );
         });
+
+        return res.json("Routine updated");
       }
     } catch (err: unknown) {
       return res.status(500).json("Server error");
