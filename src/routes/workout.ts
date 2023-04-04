@@ -162,14 +162,14 @@ workout.get(
       const response: RoutineDetails[] = [];
 
       const routineList = await pool.query(
-        "SELECT workout_routine_id, start_date, end_date FROM workout_routine_ WHERE user_id = $1 ORDER BY start_date",
+        "SELECT workout_routine_id, TO_CHAR(start_date, 'yyyy-mm-dd') AS start_date, TO_CHAR(end_date, 'yyyy-mm-dd') AS end_date FROM workout_routine_ WHERE user_id = $1 ORDER BY start_date",
         [userId]
       );
 
       routineList.rows.forEach((element) => {
         const routineId = element.workout_routine_id;
-        const startDate = element.start_date;
-        const endDate = element.end_date;
+        const startDate = new Date(element.start_date);
+        const endDate = new Date(element.end_date);
 
         const repsonseElement: RoutineDetails = {
           routineId,
@@ -314,9 +314,19 @@ workout.put(
           .json("You are not permitted to view or edit this routine");
 
       // Update start and end dates
+      const startDate = new Date(routine.startDate);
+      const startYear = startDate.getFullYear();
+      const startMonth = startDate.getMonth() + 1;
+      const startDay = startDate.getDate();
+
+      const endDate = new Date(routine.endDate);
+      const endYear = endDate.getFullYear();
+      const endMonth = endDate.getMonth() + 1;
+      const endDay = endDate.getDate();
+
       await pool.query(
-        "UPDATE workout_routine_ SET (start_date, end_date) = ($1, $2) WHERE workout_routine_id = $3",
-        [routine.startDate, routine.endDate, routineId]
+        "UPDATE workout_routine_ SET (start_date, end_date) = (make_date($1, $2, $3), make_date($4, $5, $6)) WHERE workout_routine_id = $7",
+        [startYear, startMonth, startDay, endYear, endMonth, endDay, routineId]
       );
 
       for (let i = 0; i < routine.workoutRoutineDays.length; i++) {
