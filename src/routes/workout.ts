@@ -105,17 +105,54 @@ workout.post(
     const routine: WorkoutRoutine = req.body;
 
     try {
-      // Inserts workout routine details into database
       const startDate = new Date(routine.startDate);
+      startDate.setUTCHours(0, 0, 0, 0);
       const startYear = startDate.getFullYear();
       const startMonth = startDate.getMonth() + 1;
       const startDay = startDate.getDate();
 
       const endDate = new Date(routine.endDate);
+      endDate.setUTCHours(0, 0, 0, 0);
       const endYear = endDate.getFullYear();
       const endMonth = endDate.getMonth() + 1;
       const endDay = endDate.getDate();
 
+      // Check if new routine dates overlap with any current routine dates
+      const currRoutineIds = await pool.query(
+        "SELECT workout_routine_id FROM workout_routine_ WHERE user_id = $1",
+        [userId]
+      );
+
+      const routineIds = [];
+
+      currRoutineIds.rows.forEach((element) => {
+        routineIds.push(element.workout_routine_id);
+      });
+
+      for (let i = 0; i < routineIds.length; i++) {
+        const currRoutineDates = await pool.query(
+          "SELECT TO_CHAR(start_date, 'yyyy-mm-dd') AS start_date, TO_CHAR(end_date, 'yyyy-mm-dd') AS end_date FROM workout_routine_ WHERE workout_routine_id = $1",
+          [routineIds[i]]
+        );
+
+        const currStartDate = new Date(currRoutineDates.rows[0].start_date);
+        const currEndDate = new Date(currRoutineDates.rows[0].end_date);
+
+        if (
+          (startDate >= currStartDate && startDate <= currEndDate) ||
+          (endDate >= currStartDate && endDate <= currEndDate) ||
+          (currStartDate >= startDate && currStartDate <= endDate) ||
+          (currEndDate >= startDate && currEndDate <= endDate)
+        ) {
+          return res
+            .status(400)
+            .json(
+              "The selected routine dates overlap with one or more current routine's dates"
+            );
+        }
+      }
+
+      // Inserts workout routine details into database
       const addRoutine = await pool.query(
         "INSERT INTO workout_routine_ (start_date, end_date, user_id) VALUES (make_date($1, $2, $3), make_date($4, $5, $6), $7) RETURNING *",
         [startYear, startMonth, startDay, endYear, endMonth, endDay, userId]
@@ -315,14 +352,51 @@ workout.put(
 
       // Update start and end dates
       const startDate = new Date(routine.startDate);
+      startDate.setUTCHours(0, 0, 0, 0);
       const startYear = startDate.getFullYear();
       const startMonth = startDate.getMonth() + 1;
       const startDay = startDate.getDate();
 
       const endDate = new Date(routine.endDate);
+      endDate.setUTCHours(0, 0, 0, 0);
       const endYear = endDate.getFullYear();
       const endMonth = endDate.getMonth() + 1;
       const endDay = endDate.getDate();
+
+      // Check if new routine dates overlap with any current routine dates
+      const currRoutineIds = await pool.query(
+        "SELECT workout_routine_id FROM workout_routine_ WHERE user_id = $1",
+        [userId]
+      );
+
+      const routineIds = [];
+
+      currRoutineIds.rows.forEach((element) => {
+        routineIds.push(element.workout_routine_id);
+      });
+
+      for (let i = 0; i < routineIds.length; i++) {
+        const currRoutineDates = await pool.query(
+          "SELECT TO_CHAR(start_date, 'yyyy-mm-dd') AS start_date, TO_CHAR(end_date, 'yyyy-mm-dd') AS end_date FROM workout_routine_ WHERE workout_routine_id = $1",
+          [routineIds[i]]
+        );
+
+        const currStartDate = new Date(currRoutineDates.rows[0].start_date);
+        const currEndDate = new Date(currRoutineDates.rows[0].end_date);
+
+        if (
+          (startDate >= currStartDate && startDate <= currEndDate) ||
+          (endDate >= currStartDate && endDate <= currEndDate) ||
+          (currStartDate >= startDate && currStartDate <= endDate) ||
+          (currEndDate >= startDate && currEndDate <= endDate)
+        ) {
+          return res
+            .status(400)
+            .json(
+              "The selected routine dates overlap with one or more current routine's dates"
+            );
+        }
+      }
 
       await pool.query(
         "UPDATE workout_routine_ SET (start_date, end_date) = (make_date($1, $2, $3), make_date($4, $5, $6)) WHERE workout_routine_id = $7",
