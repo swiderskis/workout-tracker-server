@@ -31,15 +31,15 @@ interface WorkoutRoutineDay {
 }
 
 interface WorkoutRoutine {
-  startDate: Date;
-  endDate: Date;
+  startDate: string;
+  endDate: string;
   workoutRoutineDays: WorkoutRoutineDay[];
 }
 
 interface RoutineDetails {
   routineId: number;
-  startDate: Date;
-  endDate: Date;
+  startDate: string;
+  endDate: string;
 }
 
 // Gets list of exercises user has added
@@ -106,13 +106,11 @@ workout.post(
       const routine: WorkoutRoutine = req.body;
 
       const startDate = new Date(routine.startDate);
-      startDate.setUTCHours(0, 0, 0, 0);
       const startYear = startDate.getFullYear();
       const startMonth = startDate.getMonth() + 1;
       const startDay = startDate.getDate();
 
       const endDate = new Date(routine.endDate);
-      endDate.setUTCHours(0, 0, 0, 0);
       const endYear = endDate.getFullYear();
       const endMonth = endDate.getMonth() + 1;
       const endDay = endDate.getDate();
@@ -205,8 +203,8 @@ workout.get(
 
       routineList.rows.forEach((element) => {
         const routineId = element.workout_routine_id;
-        const startDate = new Date(element.start_date);
-        const endDate = new Date(element.end_date);
+        const startDate = element.start_date;
+        const endDate = element.end_date;
 
         const repsonseElement: RoutineDetails = {
           routineId,
@@ -239,8 +237,8 @@ workout.get(
         [routineId]
       );
 
-      const startDate = new Date(routineDetails.rows[0].start_date);
-      const endDate = new Date(routineDetails.rows[0].end_date);
+      const startDate = routineDetails.rows[0].start_date;
+      const endDate = routineDetails.rows[0].end_date;
       const exerciseUserId = routineDetails.rows[0].user_id;
 
       if (userId !== exerciseUserId)
@@ -352,13 +350,11 @@ workout.put(
 
       // Update start and end dates
       const startDate = new Date(routine.startDate);
-      startDate.setUTCHours(0, 0, 0, 0);
       const startYear = startDate.getFullYear();
       const startMonth = startDate.getMonth() + 1;
       const startDay = startDate.getDate();
 
       const endDate = new Date(routine.endDate);
-      endDate.setUTCHours(0, 0, 0, 0);
       const endYear = endDate.getFullYear();
       const endMonth = endDate.getMonth() + 1;
       const endDay = endDate.getDate();
