@@ -106,14 +106,8 @@ workout.post(
       const routine: WorkoutRoutine = req.body;
 
       const startDate = new Date(routine.startDate);
-      const startYear = startDate.getFullYear();
-      const startMonth = startDate.getMonth() + 1;
-      const startDay = startDate.getDate();
 
       const endDate = new Date(routine.endDate);
-      const endYear = endDate.getFullYear();
-      const endMonth = endDate.getMonth() + 1;
-      const endDay = endDate.getDate();
 
       // Check if new routine dates overlap with any current routine dates
       const currRoutineIds = await pool.query(
@@ -152,8 +146,8 @@ workout.post(
 
       // Inserts workout routine details into database
       const addRoutine = await pool.query(
-        "INSERT INTO workout_routine_ (start_date, end_date, user_id) VALUES (make_date($1, $2, $3), make_date($4, $5, $6), $7) RETURNING *",
-        [startYear, startMonth, startDay, endYear, endMonth, endDay, userId]
+        "INSERT INTO workout_routine_ (start_date, end_date, user_id) VALUES ($1, $2, $3) RETURNING *",
+        [startDate, endDate, userId]
       );
 
       // Inserts workout details for each day into database
@@ -350,14 +344,8 @@ workout.put(
 
       // Update start and end dates
       const startDate = new Date(routine.startDate);
-      const startYear = startDate.getFullYear();
-      const startMonth = startDate.getMonth() + 1;
-      const startDay = startDate.getDate();
 
       const endDate = new Date(routine.endDate);
-      const endYear = endDate.getFullYear();
-      const endMonth = endDate.getMonth() + 1;
-      const endDay = endDate.getDate();
 
       // Check if new routine dates overlap with any current routine dates
       const currRoutineIds = await pool.query(
@@ -395,8 +383,8 @@ workout.put(
       }
 
       await pool.query(
-        "UPDATE workout_routine_ SET (start_date, end_date) = (make_date($1, $2, $3), make_date($4, $5, $6)) WHERE workout_routine_id = $7",
-        [startYear, startMonth, startDay, endYear, endMonth, endDay, routineId]
+        "UPDATE workout_routine_ SET (start_date, end_date) = ($1, $2) WHERE workout_routine_id = $3",
+        [startDate, endDate, routineId]
       );
 
       for (let i = 0; i < routine.workoutRoutineDays.length; i++) {
