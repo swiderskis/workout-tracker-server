@@ -22,10 +22,11 @@ exercise.post(
   checkEmptyFields,
   authentication,
   async (req: RequestWithPayload, res: Response) => {
-    const { exerciseName, muscleGroupSelection, equipmentSelection } = req.body;
-    const userId = req.userId;
-
     try {
+      const { exerciseName, muscleGroupSelection, equipmentSelection } =
+        req.body;
+      const userId = req.userId;
+
       const addExercise = await pool.query(
         "INSERT INTO exercise_ (exercise_name, muscle_group_id, user_id) VALUES ($1, $2, $3) RETURNING *",
         [exerciseName, muscleGroupSelection, userId]
@@ -50,9 +51,9 @@ exercise.get(
   "/view",
   authentication,
   async (req: RequestWithPayload, res: Response) => {
-    const userId = req.userId;
-
     try {
+      const userId = req.userId;
+
       // Get list of exercises for user, stores them as arrays
       const exerciseList = await pool.query(
         "SELECT exercise_id, exercise_name, muscle_group_id FROM exercise_ WHERE user_id = $1 ORDER BY exercise_id",
@@ -83,10 +84,10 @@ exercise.get(
   "/view/:id",
   authentication,
   async (req: RequestWithPayload, res: Response) => {
-    const userId = req.userId;
-    const exerciseId = Number(req.params.id);
-
     try {
+      const userId = req.userId;
+      const exerciseId = Number(req.params.id);
+
       // Ensure user accessing exercise info matches the user that added the exercise
       const exerciseUserIdRes = await pool.query(
         "SELECT user_id FROM exercise_ WHERE exercise_id = $1",
@@ -142,10 +143,11 @@ exercise.put(
   checkEmptyFields,
   authentication,
   async (req: RequestWithPayload, res: Response) => {
-    const exerciseId = Number(req.params.id);
-    const { exerciseName, muscleGroupSelection, equipmentSelection } = req.body;
-
     try {
+      const exerciseId = Number(req.params.id);
+      const { exerciseName, muscleGroupSelection, equipmentSelection } =
+        req.body;
+
       await pool.query(
         "UPDATE exercise_ SET (exercise_name, muscle_group_id) = ($1, $2) WHERE exercise_id = $3",
         [exerciseName, muscleGroupSelection, exerciseId]
@@ -207,9 +209,9 @@ exercise.delete(
   "/delete/:id",
   authentication,
   async (req: RequestWithPayload, res: Response) => {
-    const exerciseId = Number(req.params.id);
-
     try {
+      const exerciseId = Number(req.params.id);
+
       const exerciseExists = await pool.query(
         "SELECT exercise_id FROM exercise_ WHERE exercise_id = $1",
         [exerciseId]

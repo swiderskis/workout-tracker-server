@@ -47,9 +47,9 @@ workout.get(
   "/exercise-list",
   authentication,
   async (req: RequestWithPayload, res: Response) => {
-    const userId = req.userId;
-
     try {
+      const userId = req.userId;
+
       // Gets exercise and muscle group ids
       const exerciseList = await pool.query(
         "SELECT exercise_id, exercise_name, muscle_group_id FROM exercise_ WHERE user_id = $1",
@@ -101,10 +101,10 @@ workout.post(
   checkEmptyFields,
   authentication,
   async (req: RequestWithPayload, res: Response) => {
-    const userId = req.userId;
-    const routine: WorkoutRoutine = req.body;
-
     try {
+      const userId = req.userId;
+      const routine: WorkoutRoutine = req.body;
+
       const startDate = new Date(routine.startDate);
       startDate.setUTCHours(0, 0, 0, 0);
       const startYear = startDate.getFullYear();
@@ -193,9 +193,9 @@ workout.get(
   "/routine-list",
   authentication,
   async (req: RequestWithPayload, res: Response) => {
-    const userId = req.userId;
-
     try {
+      const userId = req.userId;
+
       const response: RoutineDetails[] = [];
 
       const routineList = await pool.query(
@@ -229,10 +229,10 @@ workout.get(
   "/routine/:id",
   authentication,
   async (req: RequestWithPayload, res: Response) => {
-    const userId = req.userId;
-    const routineId = Number(req.params.id);
-
     try {
+      const userId = req.userId;
+      const routineId = Number(req.params.id);
+
       // Get routine start and end dates
       const routineDetails = await pool.query(
         "SELECT start_date, end_date, user_id FROM workout_routine_ WHERE workout_routine_id = $1",
@@ -332,11 +332,11 @@ workout.put(
   checkEmptyFields,
   authentication,
   async (req: RequestWithPayload, res: Response) => {
-    const userId = req.userId;
-    const routineId = Number(req.params.id);
-    const routine: WorkoutRoutine = req.body;
-
     try {
+      const userId = req.userId;
+      const routineId = Number(req.params.id);
+      const routine: WorkoutRoutine = req.body;
+
       // Validate user that created the routine is modifying it
       const routineQuery = await pool.query(
         "SELECT user_id FROM workout_routine_ WHERE workout_routine_id = $1",
@@ -365,8 +365,8 @@ workout.put(
 
       // Check if new routine dates overlap with any current routine dates
       const currRoutineIds = await pool.query(
-        "SELECT workout_routine_id FROM workout_routine_ WHERE user_id = $1",
-        [userId]
+        "SELECT workout_routine_id FROM workout_routine_ WHERE user_id = $1 AND workout_routine_id != $2",
+        [userId, routineId]
       );
 
       const routineIds = [];

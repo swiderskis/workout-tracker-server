@@ -110,3 +110,29 @@ CREATE TABLE
         CONSTRAINT fk_exercise_equipment_link_id FOREIGN KEY (exercise_equipment_link_id) REFERENCES exercise_equipment_link_ (exercise_equipment_link_id),
         CONSTRAINT fk_workout_id FOREIGN KEY (workout_id) REFERENCES workout_ (workout_id)
     );
+
+CREATE TABLE
+    session_ (
+        session_id SERIAL PRIMARY KEY,
+        session_name VARCHAR(50) NOT NULL,
+        session_date DATE NOT NULL,
+        user_id UUID NOT NULL,
+        CONSTRAINT fk_user_id FOREIGN KEY (user_id) REFERENCES user_ (user_id)
+    );
+
+CREATE TABLE
+    session_exercise_ (
+        session_exercise_id SERIAL PRIMARY KEY,
+        exercise_name VARCHAR(100) NOT NULL,
+        session_id INTEGER NOT NULL,
+        CONSTRAINT fk_session_id FOREIGN KEY (session_id) REFERENCES session_ (session_id)
+    );
+
+CREATE TABLE
+    session_exercise_details_ (
+        session_exercise_details_id SERIAL PRIMARY KEY,
+        weight INTEGER NOT NULL,
+        reps INTEGER NOT NULL,
+        session_exercise_id INTEGER NOT NULL,
+        CONSTRAINT fk_session_exercise_id FOREIGN KEY (session_exercise_id) REFERENCES session_exercise_ (session_exercise_id)
+    );
