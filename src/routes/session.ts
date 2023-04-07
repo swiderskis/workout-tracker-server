@@ -8,6 +8,7 @@ const session = Router();
 
 interface SessionDetails {
   name: string;
+  date: string;
   exercises: SessionExercise[];
 }
 
@@ -28,7 +29,11 @@ session.get(
       const userId = req.userId;
       const date = new Date(req.params.date);
 
-      const response: SessionDetails = { name: "", exercises: [] };
+      const response: SessionDetails = {
+        name: "",
+        date: req.params.date,
+        exercises: [],
+      };
 
       let routineId = -1;
 
@@ -121,6 +126,55 @@ session.get(
       }
 
       return res.json(response);
+    } catch (err: unknown) {
+      console.log(err);
+      return res.status(500).json("Server error");
+    }
+  }
+);
+
+// Adds details of session to database
+session.post(
+  "/log",
+  authentication,
+  checkEmptyFields,
+  async (req: RequestWithPayload, res: Response) => {
+    try {
+      const userId = req.userId;
+
+      const session: SessionDetails = req.body;
+
+      // Insert session details
+      const sessionInsert = await pool.query(
+        "INSERT INTO session_ (session_name, session_date, user_id) VALUES ($1, $2, $3) RETURNING session_id",
+        [session.name, session.date, userId]
+      );
+
+      const sessionId = sessionInsert.rows[0].session_id;
+
+      // Insert exercise details
+      for (let i = 0; i < session.exercises.length; i++) {
+        const exerciseName = session.exercises[i].exerciseName;
+
+        const exerciseInsert = await pool.query(
+          "INSERT INTO session_exercise_ (exercise_name, session_id) VALUES ($1, $2) RETURNING session_exercise_id",
+          [exerciseName, sessionId]
+        );
+
+        const sessionExerciseId = exerciseInsert.rows[0].session_exercise_id;
+
+        for (let j = 0; j < session.exercises[i].weight.length; j++) {
+          const weight = session.exercises[i].weight[j];
+          const reps = session.exercises[i].reps[j];
+
+          await pool.query(
+            "INSERT INTO session_exercise_details_ (weight, reps, session_exercise_id) VALUES ($1, $2, $3)",
+            [weight, reps, sessionExerciseId]
+          );
+        }
+      }
+
+      return res.json("Session details inserted");
     } catch (err: unknown) {
       console.log(err);
       return res.status(500).json("Server error");
