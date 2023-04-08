@@ -136,3 +136,5 @@ CREATE TABLE
         session_exercise_id INTEGER NOT NULL,
         CONSTRAINT fk_session_exercise_id FOREIGN KEY (session_exercise_id) REFERENCES session_exercise_ (session_exercise_id)
     );
+
+    SELECT * FROM workout_;
