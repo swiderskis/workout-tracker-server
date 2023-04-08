@@ -200,13 +200,13 @@ routine.get(
         const startDate = element.start_date;
         const endDate = element.end_date;
 
-        const repsonseElement: RoutineDetails = {
+        const responseElement: RoutineDetails = {
           routineId,
           startDate,
           endDate,
         };
 
-        response.push(repsonseElement);
+        response.push(responseElement);
       });
 
       return res.json(response);

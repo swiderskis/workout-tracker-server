@@ -20,6 +20,12 @@ interface SessionExercise {
   reps: number[];
 }
 
+interface SessionList {
+  sessionId: number;
+  name: string;
+  date: string;
+}
+
 // Gets default workout data for selected day in session
 session.get(
   "/workout/:date",
@@ -184,6 +190,37 @@ session.post(
       }
 
       return res.json("Session details inserted");
+    } catch (err: unknown) {
+      return res.status(500).json("Server error");
+    }
+  }
+);
+
+session.get(
+  "/list",
+  authentication,
+  async (req: RequestWithPayload, res: Response) => {
+    try {
+      const userId = req.userId;
+
+      const sessionListQuery = await pool.query(
+        "SELECT session_id, session_name, TO_CHAR(session_date, 'yyyy-mm-dd') as session_date FROM session_ WHERE user_id = $1",
+        [userId]
+      );
+
+      const response: SessionList[] = [];
+
+      sessionListQuery.rows.forEach((element) => {
+        const sessionId = element.session_id;
+        const name = element.session_name;
+        const date = element.session_date;
+
+        const responseElement: SessionList = { sessionId, name, date };
+
+        response.push(responseElement);
+      });
+
+      return res.json(response);
     } catch (err: unknown) {
       return res.status(500).json("Server error");
     }
