@@ -143,6 +143,16 @@ session.post(
 
       const session: SessionDetails = req.body;
 
+      // Check if existing session already exists on this date
+      const existingSessionQuery = await pool.query(
+        "SELECT * FROM session_ WHERE session_date = $1 AND user_id = $2",
+        [session.date, userId]
+      );
+
+      if (existingSessionQuery.rows.length > 0) {
+        return res.status(400).json("A session already exists for this date");
+      }
+
       // Insert session details
       const sessionInsert = await pool.query(
         "INSERT INTO session_ (session_name, session_date, user_id) VALUES ($1, $2, $3) RETURNING session_id",
