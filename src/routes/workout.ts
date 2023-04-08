@@ -249,7 +249,7 @@ workout.get(
 
       // Get details for each workout day in the routine
       const routineWorkouts = await pool.query(
-        "SELECT workout_id, workout_name, day_id FROM workout_ WHERE workout_routine_id = $1",
+        "SELECT workout_id, workout_name, day_id FROM workout_ WHERE workout_routine_id = $1 ORDER BY day_id",
         [routineId]
       );
 
@@ -393,16 +393,16 @@ workout.put(
         const day = routine.workoutRoutineDays[i].day;
 
         await pool.query(
-          "UPDATE workout_ SET workout_name = $1 WHERE day_id = $2",
-          [workoutName, day]
+          "UPDATE workout_ SET workout_name = $1 WHERE day_id = $2 AND workout_routine_id = $3",
+          [workoutName, day, routineId]
         );
 
         // Update exercises in workout
         const workoutExercises = routine.workoutRoutineDays[i].workoutExercises;
 
         const workoutIdQuery = await pool.query(
-          "SELECT workout_id FROM workout_ WHERE day_id = $1",
-          [day]
+          "SELECT workout_id FROM workout_ WHERE day_id = $1 AND workout_routine_id = $2",
+          [day, routineId]
         );
 
         const workoutId = workoutIdQuery.rows[0].workout_id;
@@ -479,9 +479,9 @@ workout.put(
             [element, workoutId]
           );
         });
-
-        return res.json("Routine updated");
       }
+
+      return res.json("Routine updated");
     } catch (err: unknown) {
       return res.status(500).json("Server error");
     }
