@@ -3,7 +3,7 @@ import * as express from "express";
 import * as cors from "cors";
 import loginRegister from "./routes/loginRegister";
 import exercise from "./routes/exercise";
-import workout from "./routes/workout";
+import routine from "./routes/workout";
 import session from "./routes/session";
 
 const app = express();
@@ -15,7 +15,7 @@ app.use(cors());
 app.use(express.json());
 app.use(loginRegister);
 app.use("/exercise", exercise);
-app.use("/workout", workout);
+app.use("/routine", routine);
 app.use("/session", session);
 
 app.listen(port, () => {

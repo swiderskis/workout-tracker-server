@@ -4,7 +4,7 @@ import RequestWithPayload from "../interfaces/RequestWithPayload";
 import authentication from "../middleware/authentication";
 import checkEmptyFields from "../middleware/checkEmptyFields";
 
-const workout = Router();
+const routine = Router();
 
 interface WorkoutExerciseInfo {
   exerciseId: number;
@@ -43,7 +43,7 @@ interface RoutineDetails {
 }
 
 // Gets list of exercises user has added
-workout.get(
+routine.get(
   "/exercise-list",
   authentication,
   async (req: RequestWithPayload, res: Response) => {
@@ -96,8 +96,8 @@ workout.get(
 );
 
 // Adds user created workout routine into database
-workout.post(
-  "/create-routine",
+routine.post(
+  "/create",
   checkEmptyFields,
   authentication,
   async (req: RequestWithPayload, res: Response) => {
@@ -181,8 +181,8 @@ workout.post(
 );
 
 // Gets a list of routines
-workout.get(
-  "/routine-list",
+routine.get(
+  "/list",
   authentication,
   async (req: RequestWithPayload, res: Response) => {
     try {
@@ -217,8 +217,8 @@ workout.get(
 );
 
 // Gets details for a routine
-workout.get(
-  "/routine/:id",
+routine.get(
+  "/:id",
   authentication,
   async (req: RequestWithPayload, res: Response) => {
     try {
@@ -319,8 +319,8 @@ workout.get(
 );
 
 // Updates routine information
-workout.put(
-  "/routine/:id",
+routine.put(
+  "/:id",
   checkEmptyFields,
   authentication,
   async (req: RequestWithPayload, res: Response) => {
@@ -488,4 +488,4 @@ workout.put(
   }
 );
 
-export default workout;
+export default routine;
