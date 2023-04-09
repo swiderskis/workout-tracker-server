@@ -40,6 +40,7 @@ loginRegister.post(
 
       return res.json("User " + registerUser.rows[0].username + " registered");
     } catch (err: unknown) {
+      console.log(err);
       return res.status(500).json("Server error");
     }
   }
@@ -77,7 +78,6 @@ loginRegister.post(
       return res.json(token);
     } catch (err: unknown) {
       console.log(err);
-
       return res.status(500).json("Server error");
     }
   }
@@ -92,7 +92,6 @@ loginRegister.get(
       return res.json("User authenticated");
     } catch (err: unknown) {
       console.log(err);
-
       return res.status(500).json("Server error");
     }
   }

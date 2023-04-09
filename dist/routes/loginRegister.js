@@ -37,6 +37,7 @@ loginRegister.post("/register", checkEmptyFields_1.default, registerDetailsValid
         return res.json("User " + registerUser.rows[0].username + " registered");
     }
     catch (err) {
+        console.log(err);
         return res.status(500).json("Server error");
     }
 }));

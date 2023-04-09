@@ -40,6 +40,7 @@ exercise.post(
 
       return res.json("Exercise" + exerciseName + "added");
     } catch (err: unknown) {
+      console.log(err);
       return res.status(500).json("Server error");
     }
   }
@@ -70,6 +71,7 @@ exercise.get("/view", authentication, async (req: Request, res: Response) => {
 
     return res.json(response);
   } catch (err: unknown) {
+    console.log(err);
     return res.status(500).json("Server error");
   }
 });
@@ -127,6 +129,7 @@ exercise.get(
 
       return res.json(response);
     } catch (err: unknown) {
+      console.log(err);
       return res.status(500).json("Server error");
     }
   }
@@ -194,6 +197,7 @@ exercise.put(
 
       return res.json("Exercise" + exerciseName + "updated");
     } catch (err: unknown) {
+      console.log(err);
       return res.status(500).json("Server error");
     }
   }

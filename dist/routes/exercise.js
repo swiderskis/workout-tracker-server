@@ -29,6 +29,7 @@ exercise.post("/add", checkEmptyFields_1.default, authentication_1.default, (req
         return res.json("Exercise" + exerciseName + "added");
     }
     catch (err) {
+        console.log(err);
         return res.status(500).json("Server error");
     }
 }));
@@ -49,6 +50,7 @@ exercise.get("/view", authentication_1.default, (req, res) => __awaiter(void 0, 
         return res.json(response);
     }
     catch (err) {
+        console.log(err);
         return res.status(500).json("Server error");
     }
 }));
@@ -82,6 +84,7 @@ exercise.get("/view/:id", authentication_1.default, (req, res) => __awaiter(void
         return res.json(response);
     }
     catch (err) {
+        console.log(err);
         return res.status(500).json("Server error");
     }
 }));
@@ -113,6 +116,7 @@ exercise.put("/update/:id", checkEmptyFields_1.default, authentication_1.default
         return res.json("Exercise" + exerciseName + "updated");
     }
     catch (err) {
+        console.log(err);
         return res.status(500).json("Server error");
     }
 }));

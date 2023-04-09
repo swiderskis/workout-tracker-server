@@ -83,6 +83,7 @@ session.get("/workout/:date", authentication_1.default, (req, res) => __awaiter(
         return res.json(response);
     }
     catch (err) {
+        console.log(err);
         return res.status(500).json("Server error");
     }
 }));
@@ -114,6 +115,7 @@ session.post("/log", authentication_1.default, checkEmptyFields_1.default, (req,
         return res.json("Session details inserted");
     }
     catch (err) {
+        console.log(err);
         return res.status(500).json("Server error");
     }
 }));
@@ -132,6 +134,7 @@ session.get("/list", authentication_1.default, (req, res) => __awaiter(void 0, v
         return res.json(response);
     }
     catch (err) {
+        console.log(err);
         return res.status(500).json("Server error");
     }
 }));
@@ -181,6 +184,7 @@ session.get("/:id", authentication_1.default, (req, res) => __awaiter(void 0, vo
         return res.json(response);
     }
     catch (err) {
+        console.log(err);
         return res.status(500).json("Server error");
     }
 }));

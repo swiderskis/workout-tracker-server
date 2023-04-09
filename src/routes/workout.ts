@@ -89,6 +89,7 @@ routine.get(
 
       return res.json(response);
     } catch (err: unknown) {
+      console.log(err);
       return res.status(500).json("Server error");
     }
   }
@@ -174,6 +175,7 @@ routine.post(
       }
       return res.json("Routine added");
     } catch (err: unknown) {
+      console.log(err);
       return res.status(500).json("Server error");
     }
   }
@@ -207,6 +209,7 @@ routine.get("/list", authentication, async (req: Request, res: Response) => {
 
     return res.json(response);
   } catch (err: unknown) {
+    console.log(err);
     return res.status(500).json("Server error");
   }
 });
@@ -305,6 +308,7 @@ routine.get("/:id", authentication, async (req: Request, res: Response) => {
 
     return res.json(routine);
   } catch (err: unknown) {
+    console.log(err);
     return res.status(500).json("Server error");
   }
 });
@@ -474,6 +478,7 @@ routine.put(
 
       return res.json("Routine updated");
     } catch (err: unknown) {
+      console.log(err);
       return res.status(500).json("Server error");
     }
   }

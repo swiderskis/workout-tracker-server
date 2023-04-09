@@ -132,6 +132,7 @@ session.get(
 
       return res.json(response);
     } catch (err: unknown) {
+      console.log(err);
       return res.status(500).json("Server error");
     }
   }
@@ -191,6 +192,7 @@ session.post(
 
       return res.json("Session details inserted");
     } catch (err: unknown) {
+      console.log(err);
       return res.status(500).json("Server error");
     }
   }
@@ -219,6 +221,7 @@ session.get("/list", authentication, async (req: Request, res: Response) => {
 
     return res.json(response);
   } catch (err: unknown) {
+    console.log(err);
     return res.status(500).json("Server error");
   }
 });
@@ -292,6 +295,7 @@ session.get("/:id", authentication, async (req: Request, res: Response) => {
 
     return res.json(response);
   } catch (err: unknown) {
+    console.log(err);
     return res.status(500).json("Server error");
   }
 });

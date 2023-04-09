@@ -49,6 +49,7 @@ routine.get("/exercise-list", authentication_1.default, (req, res) => __awaiter(
         return res.json(response);
     }
     catch (err) {
+        console.log(err);
         return res.status(500).json("Server error");
     }
 }));
@@ -97,6 +98,7 @@ routine.post("/create", checkEmptyFields_1.default, authentication_1.default, (r
         return res.json("Routine added");
     }
     catch (err) {
+        console.log(err);
         return res.status(500).json("Server error");
     }
 }));
@@ -120,6 +122,7 @@ routine.get("/list", authentication_1.default, (req, res) => __awaiter(void 0, v
         return res.json(response);
     }
     catch (err) {
+        console.log(err);
         return res.status(500).json("Server error");
     }
 }));
@@ -184,6 +187,7 @@ routine.get("/:id", authentication_1.default, (req, res) => __awaiter(void 0, vo
         return res.json(routine);
     }
     catch (err) {
+        console.log(err);
         return res.status(500).json("Server error");
     }
 }));
@@ -272,6 +276,7 @@ routine.put("/:id", checkEmptyFields_1.default, authentication_1.default, (req, 
         return res.json("Routine updated");
     }
     catch (err) {
+        console.log(err);
         return res.status(500).json("Server error");
     }
 }));
