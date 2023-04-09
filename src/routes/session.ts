@@ -13,7 +13,7 @@ interface SessionDetails {
 }
 
 interface SessionExercise {
-  exerciseEquipmentLinkId: number;
+  id: number;
   exerciseName: string;
   equipmentId: number;
   weight: number[];
@@ -121,7 +121,7 @@ session.get(
         }
 
         const sessionExercise: SessionExercise = {
-          exerciseEquipmentLinkId: linkId,
+          id: linkId,
           exerciseName: exerciseName,
           equipmentId: equipmentId,
           weight: weightArray,
@@ -170,10 +170,11 @@ session.post(
       // Insert exercise details
       for (let i = 0; i < session.exercises.length; i++) {
         const exerciseName = session.exercises[i].exerciseName;
+        const equipmentId = session.exercises[i].equipmentId;
 
         const exerciseInsert = await pool.query(
-          "INSERT INTO session_exercise_ (exercise_name, session_id) VALUES ($1, $2) RETURNING session_exercise_id",
-          [exerciseName, sessionId]
+          "INSERT INTO session_exercise_ (exercise_name, equipment_id, session_id) VALUES ($1, $2, $3) RETURNING session_exercise_id",
+          [exerciseName, equipmentId, sessionId]
         );
 
         const sessionExerciseId = exerciseInsert.rows[0].session_exercise_id;
@@ -204,7 +205,7 @@ session.get(
       const userId = req.userId;
 
       const sessionListQuery = await pool.query(
-        "SELECT session_id, session_name, TO_CHAR(session_date, 'yyyy-mm-dd') as session_date FROM session_ WHERE user_id = $1",
+        "SELECT session_id, session_name, TO_CHAR(session_date, 'yyyy-mm-dd') as session_date FROM session_ WHERE user_id = $1 ORDER BY session_date DESC",
         [userId]
       );
 
@@ -222,6 +223,161 @@ session.get(
 
       return res.json(response);
     } catch (err: unknown) {
+      return res.status(500).json("Server error");
+    }
+  }
+);
+
+session.get(
+  "/:id",
+  authentication,
+  async (req: RequestWithPayload, res: Response) => {
+    try {
+      const userId = req.userId;
+      const sessionId = req.params.id;
+
+      // Get session name and date
+      const sessionQuery = await pool.query(
+        "SELECT session_name, TO_CHAR(session_date, 'yyyy-mm-dd') AS session_date, user_id FROM session_ WHERE session_id = $1",
+        [sessionId]
+      );
+
+      // Check user editing session is also the one who made it
+      const sessionUserId = sessionQuery.rows[0].user_id;
+      const date = sessionQuery.rows[0].session_date;
+
+      if (sessionUserId !== userId)
+        return res
+          .status(403)
+          .json("You are not permitted to view or edit this session");
+
+      const sessionName = sessionQuery.rows[0].session_name;
+
+      const response: SessionDetails = {
+        name: sessionName,
+        date: date,
+        exercises: [],
+      };
+
+      // Get exercise details
+      const sessionExerciseQuery = await pool.query(
+        "SELECT session_exercise_id, exercise_name, equipment_id FROM session_exercise_ WHERE session_id = $1",
+        [sessionId]
+      );
+
+      for (let i = 0; i < sessionExerciseQuery.rows.length; i++) {
+        const sessionExerciseId =
+          sessionExerciseQuery.rows[i].session_exercise_id;
+        const exerciseName = sessionExerciseQuery.rows[i].exercise_name;
+        const equipmentId = sessionExerciseQuery.rows[i].equipment_id;
+
+        const sessionExerciseDetailsQuery = await pool.query(
+          "SELECT weight, reps FROM session_exercise_details_ WHERE session_exercise_id = $1",
+          [sessionExerciseId]
+        );
+
+        const weightArray = [];
+        const repsArray = [];
+
+        for (let j = 0; j < sessionExerciseDetailsQuery.rows.length; j++) {
+          const weight = sessionExerciseDetailsQuery.rows[j].weight;
+          const reps = sessionExerciseDetailsQuery.rows[j].reps;
+
+          weightArray.push(weight);
+          repsArray.push(reps);
+        }
+
+        const responseExerciseElement: SessionExercise = {
+          id: sessionExerciseId,
+          exerciseName: exerciseName,
+          weight: weightArray,
+          reps: repsArray,
+          equipmentId: equipmentId,
+        };
+
+        response.exercises.push(responseExerciseElement);
+      }
+
+      return res.json(response);
+    } catch (err: unknown) {
+      return res.status(500).json("Server error");
+    }
+  }
+);
+
+session.put(
+  "/:id",
+  authentication,
+  checkEmptyFields,
+  async (req: RequestWithPayload, res: Response) => {
+    try {
+      const userId = req.userId;
+      const sessionId = req.params.id;
+
+      const session: SessionDetails = req.body;
+
+      // Check if existing session already exists on this date
+      const existingSessionQuery = await pool.query(
+        "SELECT * FROM session_ WHERE session_date = $1 AND user_id = $2 AND session_id != $3",
+        [session.date, userId, sessionId]
+      );
+
+      if (existingSessionQuery.rows.length > 0) {
+        return res.status(400).json("A session already exists for this date");
+      }
+
+      await pool.query(
+        "UPDATE session_ SET (session_name, session_date) = ($1, $2) WHERE session_id = $3",
+        [session.name, session.date, sessionId]
+      );
+
+      // Delete old session exercise details
+      const sessionExerciseQuery = await pool.query(
+        "SELECT session_exercise_id FROM session_exercise_ WHERE session_id = $1",
+        [sessionId]
+      );
+
+      for (let i = 0; i < sessionExerciseQuery.rows.length; i++) {
+        const sessionExerciseId =
+          sessionExerciseQuery.rows[i].session_exercise_id;
+
+        await pool.query(
+          "DELETE FROM session_exercise_details_ WHERE session_exercise_id = $1",
+          [sessionExerciseId]
+        );
+
+        await pool.query(
+          "DELETE FROM session_exercise_ WHERE session_exercise_id = $1",
+          [sessionExerciseId]
+        );
+      }
+
+      // Insert new session exercise details
+      for (let i = 0; i < session.exercises.length; i++) {
+        const exerciseName = session.exercises[i].exerciseName;
+        const equipmentId = session.exercises[i].equipmentId;
+
+        const exerciseInsert = await pool.query(
+          "INSERT INTO session_exercise_ (exercise_name, equipment_id, session_id) VALUES ($1, $2, $3) RETURNING session_exercise_id",
+          [exerciseName, equipmentId, sessionId]
+        );
+
+        const sessionExerciseId = exerciseInsert.rows[0].session_exercise_id;
+
+        for (let j = 0; j < session.exercises[i].weight.length; j++) {
+          const weight = session.exercises[i].weight[j];
+          const reps = session.exercises[i].reps[j];
+
+          await pool.query(
+            "INSERT INTO session_exercise_details_ (weight, reps, session_exercise_id) VALUES ($1, $2, $3)",
+            [weight, reps, sessionExerciseId]
+          );
+        }
+      }
+
+      return res.json(`Session ${sessionId} updated`);
+    } catch (err: unknown) {
+      console.log(err);
       return res.status(500).json("Server error");
     }
   }

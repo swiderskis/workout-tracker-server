@@ -124,8 +124,10 @@ CREATE TABLE
     session_exercise_ (
         session_exercise_id SERIAL PRIMARY KEY,
         exercise_name VARCHAR(100) NOT NULL,
+        equipment_id INTEGER NOT NULL,
         session_id INTEGER NOT NULL,
-        CONSTRAINT fk_session_id FOREIGN KEY (session_id) REFERENCES session_ (session_id)
+        CONSTRAINT fk_session_id FOREIGN KEY (session_id) REFERENCES session_ (session_id),
+        CONSTRAINT fk_equipment_id FOREIGN KEY (equipment_id) REFERENCES equipment_ (equipment_id)
     );
 
 CREATE TABLE
@@ -136,5 +138,3 @@ CREATE TABLE
         session_exercise_id INTEGER NOT NULL,
         CONSTRAINT fk_session_exercise_id FOREIGN KEY (session_exercise_id) REFERENCES session_exercise_ (session_exercise_id)
     );
-
-    SELECT * FROM workout_;
