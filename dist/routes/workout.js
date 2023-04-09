@@ -87,7 +87,7 @@ routine.post("/create", checkEmptyFields_1.default, authentication_1.default, (r
             const addWorkout = yield database_1.default.query("INSERT INTO workout_ (workout_name, day_id, workout_routine_id) VALUES ($1, $2, $3) RETURNING *", [workoutName, day, addRoutine.rows[0].workout_routine_id]);
             // Inserts exercise details for each workout into database
             for (let j = 0; j < workoutExercises.length; j++) {
-                yield database_1.default.query("INSERT INTO workout_exercise_ (exercise_equipment_link_id, sets, reps, workout_id) VALUES ($1, $2, $3, $4)", [
+                const addExercise = yield database_1.default.query("INSERT INTO workout_exercise_ (exercise_equipment_link_id, sets, reps, workout_id) VALUES ($1, $2, $3, $4) RETURNING *", [
                     workoutExercises[j].exerciseEquipmentLinkId,
                     workoutExercises[j].sets,
                     workoutExercises[j].reps,

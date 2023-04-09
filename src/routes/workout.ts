@@ -162,8 +162,8 @@ routine.post(
 
         // Inserts exercise details for each workout into database
         for (let j = 0; j < workoutExercises.length; j++) {
-          await pool.query(
-            "INSERT INTO workout_exercise_ (exercise_equipment_link_id, sets, reps, workout_id) VALUES ($1, $2, $3, $4)",
+          const addExercise = await pool.query(
+            "INSERT INTO workout_exercise_ (exercise_equipment_link_id, sets, reps, workout_id) VALUES ($1, $2, $3, $4) RETURNING *",
             [
               workoutExercises[j].exerciseEquipmentLinkId,
               workoutExercises[j].sets,
