@@ -5,7 +5,6 @@ import generateToken from "../utils/generateToken";
 import authentication from "../middleware/authentication";
 import checkEmptyFields from "../middleware/checkEmptyFields";
 import registerDetailsValidation from "../middleware/registerDetailsValidation";
-import RequestWithPayload from "../interfaces/RequestWithPayload";
 
 const loginRegister = Router();
 
@@ -77,6 +76,8 @@ loginRegister.post(
 
       return res.json(token);
     } catch (err: unknown) {
+      console.log(err);
+
       return res.status(500).json("Server error");
     }
   }
@@ -86,10 +87,12 @@ loginRegister.post(
 loginRegister.get(
   "/authenticate",
   authentication,
-  async (req: RequestWithPayload, res: Response) => {
+  async (_req: Request, res: Response) => {
     try {
       return res.json("User authenticated");
     } catch (err: unknown) {
+      console.log(err);
+
       return res.status(500).json("Server error");
     }
   }

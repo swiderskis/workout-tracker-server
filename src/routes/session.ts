@@ -1,6 +1,5 @@
-import { Response, Router } from "express";
+import { Request, Response, Router } from "express";
 import authentication from "../middleware/authentication";
-import RequestWithPayload from "../interfaces/RequestWithPayload";
 import pool from "../database";
 import checkEmptyFields from "../middleware/checkEmptyFields";
 
@@ -30,9 +29,9 @@ interface SessionList {
 session.get(
   "/workout/:date",
   authentication,
-  async (req: RequestWithPayload, res: Response) => {
+  async (req: Request, res: Response) => {
     try {
-      const userId = req.userId;
+      const userId = res.locals.userId;
       const date = new Date(req.params.date);
 
       const response: SessionDetails = {
@@ -143,9 +142,9 @@ session.post(
   "/log",
   authentication,
   checkEmptyFields,
-  async (req: RequestWithPayload, res: Response) => {
+  async (req: Request, res: Response) => {
     try {
-      const userId = req.userId;
+      const userId = res.locals.userId;
 
       const session: SessionDetails = req.body;
 
@@ -197,121 +196,113 @@ session.post(
   }
 );
 
-session.get(
-  "/list",
-  authentication,
-  async (req: RequestWithPayload, res: Response) => {
-    try {
-      const userId = req.userId;
+session.get("/list", authentication, async (req: Request, res: Response) => {
+  try {
+    const userId = res.locals.userId;
 
-      const sessionListQuery = await pool.query(
-        "SELECT session_id, session_name, TO_CHAR(session_date, 'yyyy-mm-dd') as session_date FROM session_ WHERE user_id = $1 ORDER BY session_date DESC",
-        [userId]
-      );
+    const sessionListQuery = await pool.query(
+      "SELECT session_id, session_name, TO_CHAR(session_date, 'yyyy-mm-dd') as session_date FROM session_ WHERE user_id = $1 ORDER BY session_date DESC",
+      [userId]
+    );
 
-      const response: SessionList[] = [];
+    const response: SessionList[] = [];
 
-      sessionListQuery.rows.forEach((element) => {
-        const sessionId = element.session_id;
-        const name = element.session_name;
-        const date = element.session_date;
+    sessionListQuery.rows.forEach((element) => {
+      const sessionId = element.session_id;
+      const name = element.session_name;
+      const date = element.session_date;
 
-        const responseElement: SessionList = { sessionId, name, date };
+      const responseElement: SessionList = { sessionId, name, date };
 
-        response.push(responseElement);
-      });
+      response.push(responseElement);
+    });
 
-      return res.json(response);
-    } catch (err: unknown) {
-      return res.status(500).json("Server error");
-    }
+    return res.json(response);
+  } catch (err: unknown) {
+    return res.status(500).json("Server error");
   }
-);
+});
 
-session.get(
-  "/:id",
-  authentication,
-  async (req: RequestWithPayload, res: Response) => {
-    try {
-      const userId = req.userId;
-      const sessionId = req.params.id;
+session.get("/:id", authentication, async (req: Request, res: Response) => {
+  try {
+    const userId = res.locals.userId;
+    const sessionId = req.params.id;
 
-      // Get session name and date
-      const sessionQuery = await pool.query(
-        "SELECT session_name, TO_CHAR(session_date, 'yyyy-mm-dd') AS session_date, user_id FROM session_ WHERE session_id = $1",
-        [sessionId]
+    // Get session name and date
+    const sessionQuery = await pool.query(
+      "SELECT session_name, TO_CHAR(session_date, 'yyyy-mm-dd') AS session_date, user_id FROM session_ WHERE session_id = $1",
+      [sessionId]
+    );
+
+    // Check user editing session is also the one who made it
+    const sessionUserId = sessionQuery.rows[0].user_id;
+    const date = sessionQuery.rows[0].session_date;
+
+    if (sessionUserId !== userId)
+      return res
+        .status(403)
+        .json("You are not permitted to view or edit this session");
+
+    const sessionName = sessionQuery.rows[0].session_name;
+
+    const response: SessionDetails = {
+      name: sessionName,
+      date: date,
+      exercises: [],
+    };
+
+    // Get exercise details
+    const sessionExerciseQuery = await pool.query(
+      "SELECT session_exercise_id, exercise_name, equipment_id FROM session_exercise_ WHERE session_id = $1",
+      [sessionId]
+    );
+
+    for (let i = 0; i < sessionExerciseQuery.rows.length; i++) {
+      const sessionExerciseId =
+        sessionExerciseQuery.rows[i].session_exercise_id;
+      const exerciseName = sessionExerciseQuery.rows[i].exercise_name;
+      const equipmentId = sessionExerciseQuery.rows[i].equipment_id;
+
+      const sessionExerciseDetailsQuery = await pool.query(
+        "SELECT weight, reps FROM session_exercise_details_ WHERE session_exercise_id = $1",
+        [sessionExerciseId]
       );
 
-      // Check user editing session is also the one who made it
-      const sessionUserId = sessionQuery.rows[0].user_id;
-      const date = sessionQuery.rows[0].session_date;
+      const weightArray = [];
+      const repsArray = [];
 
-      if (sessionUserId !== userId)
-        return res
-          .status(403)
-          .json("You are not permitted to view or edit this session");
+      for (let j = 0; j < sessionExerciseDetailsQuery.rows.length; j++) {
+        const weight = sessionExerciseDetailsQuery.rows[j].weight;
+        const reps = sessionExerciseDetailsQuery.rows[j].reps;
 
-      const sessionName = sessionQuery.rows[0].session_name;
-
-      const response: SessionDetails = {
-        name: sessionName,
-        date: date,
-        exercises: [],
-      };
-
-      // Get exercise details
-      const sessionExerciseQuery = await pool.query(
-        "SELECT session_exercise_id, exercise_name, equipment_id FROM session_exercise_ WHERE session_id = $1",
-        [sessionId]
-      );
-
-      for (let i = 0; i < sessionExerciseQuery.rows.length; i++) {
-        const sessionExerciseId =
-          sessionExerciseQuery.rows[i].session_exercise_id;
-        const exerciseName = sessionExerciseQuery.rows[i].exercise_name;
-        const equipmentId = sessionExerciseQuery.rows[i].equipment_id;
-
-        const sessionExerciseDetailsQuery = await pool.query(
-          "SELECT weight, reps FROM session_exercise_details_ WHERE session_exercise_id = $1",
-          [sessionExerciseId]
-        );
-
-        const weightArray = [];
-        const repsArray = [];
-
-        for (let j = 0; j < sessionExerciseDetailsQuery.rows.length; j++) {
-          const weight = sessionExerciseDetailsQuery.rows[j].weight;
-          const reps = sessionExerciseDetailsQuery.rows[j].reps;
-
-          weightArray.push(weight);
-          repsArray.push(reps);
-        }
-
-        const responseExerciseElement: SessionExercise = {
-          id: sessionExerciseId,
-          exerciseName: exerciseName,
-          weight: weightArray,
-          reps: repsArray,
-          equipmentId: equipmentId,
-        };
-
-        response.exercises.push(responseExerciseElement);
+        weightArray.push(weight);
+        repsArray.push(reps);
       }
 
-      return res.json(response);
-    } catch (err: unknown) {
-      return res.status(500).json("Server error");
+      const responseExerciseElement: SessionExercise = {
+        id: sessionExerciseId,
+        exerciseName: exerciseName,
+        weight: weightArray,
+        reps: repsArray,
+        equipmentId: equipmentId,
+      };
+
+      response.exercises.push(responseExerciseElement);
     }
+
+    return res.json(response);
+  } catch (err: unknown) {
+    return res.status(500).json("Server error");
   }
-);
+});
 
 session.put(
   "/:id",
   authentication,
   checkEmptyFields,
-  async (req: RequestWithPayload, res: Response) => {
+  async (req: Request, res: Response) => {
     try {
-      const userId = req.userId;
+      const userId = res.locals.userId;
       const sessionId = req.params.id;
 
       const session: SessionDetails = req.body;

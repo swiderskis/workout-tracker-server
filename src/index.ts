@@ -1,6 +1,5 @@
-import * as dotenv from "dotenv";
-import * as express from "express";
-import * as cors from "cors";
+import express from "express";
+import cors from "cors";
 import loginRegister from "./routes/loginRegister";
 import exercise from "./routes/exercise";
 import routine from "./routes/workout";
@@ -9,7 +8,7 @@ import session from "./routes/session";
 const app = express();
 const port = 5000;
 
-dotenv.config();
+require("dotenv").config();
 
 app.use(cors());
 app.use(express.json());

@@ -1,14 +1,8 @@
-import { NextFunction, Response } from "express";
+import { NextFunction, Request, Response } from "express";
 import { verify } from "jsonwebtoken";
-import RequestWithPayload from "../interfaces/RequestWithPayload";
-import Payload from "../interfaces/Payload";
 
 // Authorises token
-async function authentication(
-  req: RequestWithPayload,
-  res: Response,
-  next: NextFunction
-) {
+function authentication(req: Request, res: Response, next: NextFunction) {
   try {
     const token = req.header("token");
 
@@ -16,9 +10,9 @@ async function authentication(
       return res.status(401).json("No token");
     }
 
-    const payload = verify(token, process.env.JWT_SECRET) as Payload;
+    const payload: any = verify(token, process.env.JWT_SECRET as string);
 
-    req.userId = payload.userId;
+    res.locals.userId = payload.userId;
 
     next();
   } catch (err: unknown) {

@@ -1,6 +1,5 @@
-import { Response, Router } from "express";
+import { Request, Response, Router } from "express";
 import pool from "../database";
-import RequestWithPayload from "../interfaces/RequestWithPayload";
 import authentication from "../middleware/authentication";
 import checkEmptyFields from "../middleware/checkEmptyFields";
 
@@ -46,9 +45,9 @@ interface RoutineDetails {
 routine.get(
   "/exercise-list",
   authentication,
-  async (req: RequestWithPayload, res: Response) => {
+  async (req: Request, res: Response) => {
     try {
-      const userId = req.userId;
+      const userId = res.locals.userId;
 
       // Gets exercise and muscle group ids
       const exerciseList = await pool.query(
@@ -63,8 +62,8 @@ routine.get(
         const exerciseId = exerciseList.rows[i].exercise_id;
         const exerciseName = exerciseList.rows[i].exercise_name;
         const muscleGroupId = exerciseList.rows[i].muscle_group_id;
-        const exerciseEquipmentLinkIds = [];
-        const equipmentIds = [];
+        const exerciseEquipmentLinkIds: number[] = [];
+        const equipmentIds: number[] = [];
 
         const equipmentList = await pool.query(
           "SELECT exercise_equipment_link_id, equipment_id FROM exercise_equipment_link_ WHERE exercise_id = $1 ORDER BY equipment_id",
@@ -100,9 +99,9 @@ routine.post(
   "/create",
   checkEmptyFields,
   authentication,
-  async (req: RequestWithPayload, res: Response) => {
+  async (req: Request, res: Response) => {
     try {
-      const userId = req.userId;
+      const userId = res.locals.userId;
       const routine: WorkoutRoutine = req.body;
 
       const startDate = new Date(routine.startDate);
@@ -115,7 +114,7 @@ routine.post(
         [userId]
       );
 
-      const routineIds = [];
+      const routineIds: number[] = [];
 
       currRoutineIds.rows.forEach((element) => {
         routineIds.push(element.workout_routine_id);
@@ -181,151 +180,143 @@ routine.post(
 );
 
 // Gets a list of routines
-routine.get(
-  "/list",
-  authentication,
-  async (req: RequestWithPayload, res: Response) => {
-    try {
-      const userId = req.userId;
+routine.get("/list", authentication, async (req: Request, res: Response) => {
+  try {
+    const userId = res.locals.userId;
 
-      const response: RoutineDetails[] = [];
+    const response: RoutineDetails[] = [];
 
-      const routineList = await pool.query(
-        "SELECT workout_routine_id, TO_CHAR(start_date, 'yyyy-mm-dd') AS start_date, TO_CHAR(end_date, 'yyyy-mm-dd') AS end_date FROM workout_routine_ WHERE user_id = $1 ORDER BY start_date",
-        [userId]
-      );
+    const routineList = await pool.query(
+      "SELECT workout_routine_id, TO_CHAR(start_date, 'yyyy-mm-dd') AS start_date, TO_CHAR(end_date, 'yyyy-mm-dd') AS end_date FROM workout_routine_ WHERE user_id = $1 ORDER BY start_date",
+      [userId]
+    );
 
-      routineList.rows.forEach((element) => {
-        const routineId = element.workout_routine_id;
-        const startDate = element.start_date;
-        const endDate = element.end_date;
+    routineList.rows.forEach((element) => {
+      const routineId = element.workout_routine_id;
+      const startDate = element.start_date;
+      const endDate = element.end_date;
 
-        const responseElement: RoutineDetails = {
-          routineId,
-          startDate,
-          endDate,
-        };
-
-        response.push(responseElement);
-      });
-
-      return res.json(response);
-    } catch (err: unknown) {
-      return res.status(500).json("Server error");
-    }
-  }
-);
-
-// Gets details for a routine
-routine.get(
-  "/:id",
-  authentication,
-  async (req: RequestWithPayload, res: Response) => {
-    try {
-      const userId = req.userId;
-      const routineId = Number(req.params.id);
-
-      // Get routine start and end dates
-      const routineDetails = await pool.query(
-        "SELECT start_date, end_date, user_id FROM workout_routine_ WHERE workout_routine_id = $1",
-        [routineId]
-      );
-
-      const startDate = routineDetails.rows[0].start_date;
-      const endDate = routineDetails.rows[0].end_date;
-      const exerciseUserId = routineDetails.rows[0].user_id;
-
-      if (userId !== exerciseUserId)
-        return res
-          .status(403)
-          .json("You are not permitted to view or edit this routine");
-
-      // Initialise routine object to be sent in response
-      const routine: WorkoutRoutine = {
-        startDate: startDate,
-        endDate: endDate,
-        workoutRoutineDays: [],
+      const responseElement: RoutineDetails = {
+        routineId,
+        startDate,
+        endDate,
       };
 
-      // Get details for each workout day in the routine
-      const routineWorkouts = await pool.query(
-        "SELECT workout_id, workout_name, day_id FROM workout_ WHERE workout_routine_id = $1 ORDER BY day_id",
-        [routineId]
+      response.push(responseElement);
+    });
+
+    return res.json(response);
+  } catch (err: unknown) {
+    return res.status(500).json("Server error");
+  }
+});
+
+// Gets details for a routine
+routine.get("/:id", authentication, async (req: Request, res: Response) => {
+  try {
+    const userId = res.locals.userId;
+    const routineId = Number(req.params.id);
+
+    // Get routine start and end dates
+    const routineDetails = await pool.query(
+      "SELECT start_date, end_date, user_id FROM workout_routine_ WHERE workout_routine_id = $1",
+      [routineId]
+    );
+
+    const startDate = routineDetails.rows[0].start_date;
+    const endDate = routineDetails.rows[0].end_date;
+    const exerciseUserId = routineDetails.rows[0].user_id;
+
+    if (userId !== exerciseUserId)
+      return res
+        .status(403)
+        .json("You are not permitted to view or edit this routine");
+
+    // Initialise routine object to be sent in response
+    const routine: WorkoutRoutine = {
+      startDate: startDate,
+      endDate: endDate,
+      workoutRoutineDays: [],
+    };
+
+    // Get details for each workout day in the routine
+    const routineWorkouts = await pool.query(
+      "SELECT workout_id, workout_name, day_id FROM workout_ WHERE workout_routine_id = $1 ORDER BY day_id",
+      [routineId]
+    );
+
+    for (let i = 0; i < routineWorkouts.rows.length; i++) {
+      const workoutId = routineWorkouts.rows[i].workout_id;
+
+      const day = routineWorkouts.rows[i].day_id;
+      const workoutName = routineWorkouts.rows[i].workout_name;
+
+      // Initialise workout object to be pushed to routine object
+      const workout: WorkoutRoutineDay = {
+        day: day,
+        workoutName: workoutName,
+        workoutExercises: [],
+      };
+
+      // Get details for each exercise in the workout day
+      const workoutExercises = await pool.query(
+        "SELECT exercise_equipment_link_id, sets, reps FROM workout_exercise_ WHERE workout_id = $1",
+        [workoutId]
       );
 
-      for (let i = 0; i < routineWorkouts.rows.length; i++) {
-        const workoutId = routineWorkouts.rows[i].workout_id;
+      for (let j = 0; j < workoutExercises.rows.length; j++) {
+        const exerciseEquipmentLinkId =
+          workoutExercises.rows[j].exercise_equipment_link_id;
+        const sets = workoutExercises.rows[j].sets;
+        const reps = workoutExercises.rows[j].reps;
 
-        const day = routineWorkouts.rows[i].day_id;
-        const workoutName = routineWorkouts.rows[i].workout_name;
-
-        // Initialise workout object to be pushed to routine object
-        const workout: WorkoutRoutineDay = {
-          day: day,
-          workoutName: workoutName,
-          workoutExercises: [],
-        };
-
-        // Get details for each exercise in the workout day
-        const workoutExercises = await pool.query(
-          "SELECT exercise_equipment_link_id, sets, reps FROM workout_exercise_ WHERE workout_id = $1",
-          [workoutId]
+        const exerciseLink = await pool.query(
+          "SELECT exercise_id, equipment_id FROM exercise_equipment_link_ WHERE exercise_equipment_link_id = $1",
+          [exerciseEquipmentLinkId]
         );
 
-        for (let j = 0; j < workoutExercises.rows.length; j++) {
-          const exerciseEquipmentLinkId =
-            workoutExercises.rows[j].exercise_equipment_link_id;
-          const sets = workoutExercises.rows[j].sets;
-          const reps = workoutExercises.rows[j].reps;
+        const exerciseId = exerciseLink.rows[0].exercise_id;
+        const equipmentId = exerciseLink.rows[0].equipment_id;
 
-          const exerciseLink = await pool.query(
-            "SELECT exercise_id, equipment_id FROM exercise_equipment_link_ WHERE exercise_equipment_link_id = $1",
-            [exerciseEquipmentLinkId]
-          );
+        const exercise = await pool.query(
+          "SELECT exercise_name, muscle_group_id FROM exercise_ WHERE exercise_id = $1",
+          [exerciseId]
+        );
 
-          const exerciseId = exerciseLink.rows[0].exercise_id;
-          const equipmentId = exerciseLink.rows[0].equipment_id;
+        const exerciseName = exercise.rows[0].exercise_name;
+        const muscleGroupId = exercise.rows[0].muscle_group_id;
 
-          const exercise = await pool.query(
-            "SELECT exercise_name, muscle_group_id FROM exercise_ WHERE exercise_id = $1",
-            [exerciseId]
-          );
+        // Create exercise object to be pushed to workout object
+        const workoutExercise: WorkoutExerciseSelection = {
+          exerciseId,
+          exerciseName,
+          muscleGroupId,
+          sets,
+          reps,
+          exerciseEquipmentLinkId,
+          equipmentId,
+        };
 
-          const exerciseName = exercise.rows[0].exercise_name;
-          const muscleGroupId = exercise.rows[0].muscle_group_id;
-
-          // Create exercise object to be pushed to workout object
-          const workoutExercise: WorkoutExerciseSelection = {
-            exerciseId,
-            exerciseName,
-            muscleGroupId,
-            sets,
-            reps,
-            exerciseEquipmentLinkId,
-            equipmentId,
-          };
-
-          workout.workoutExercises.push(workoutExercise);
-        }
-
-        routine.workoutRoutineDays.push(workout);
+        workout.workoutExercises.push(workoutExercise);
       }
 
-      return res.json(routine);
-    } catch (err: unknown) {
-      return res.status(500).json("Server error");
+      routine.workoutRoutineDays.push(workout);
     }
+
+    return res.json(routine);
+  } catch (err: unknown) {
+    return res.status(500).json("Server error");
   }
-);
+});
 
 // Updates routine information
 routine.put(
   "/:id",
   checkEmptyFields,
   authentication,
-  async (req: RequestWithPayload, res: Response) => {
+  async (req: Request, res: Response) => {
     try {
-      const userId = req.userId;
+      const userId = res.locals.userId;
       const routineId = Number(req.params.id);
       const routine: WorkoutRoutine = req.body;
 
@@ -353,7 +344,7 @@ routine.put(
         [userId, routineId]
       );
 
-      const routineIds = [];
+      const routineIds: number[] = [];
 
       currRoutineIds.rows.forEach((element) => {
         routineIds.push(element.workout_routine_id);
@@ -407,9 +398,9 @@ routine.put(
 
         const workoutId = workoutIdQuery.rows[0].workout_id;
 
-        const exerciseLinksToAdd = [];
-        const exerciseLinksToRemove = [];
-        const exerciseLinksToUpdate = [];
+        const exerciseLinksToAdd: number[] = [];
+        const exerciseLinksToRemove: number[] = [];
+        const exerciseLinksToUpdate: number[] = [];
 
         // Get current exercise link ids
         const currWorkoutExerciseLinks = await pool.query(
@@ -417,14 +408,14 @@ routine.put(
           [workoutId]
         );
 
-        const currLinkIds = [];
+        const currLinkIds: number[] = [];
 
         currWorkoutExerciseLinks.rows.forEach((element) => {
           currLinkIds.push(element.exercise_equipment_link_id);
         });
 
         // Get new exercise link ids
-        const newLinkIds = [];
+        const newLinkIds: number[] = [];
 
         for (let j = 0; j < workoutExercises.length; j++) {
           newLinkIds.push(workoutExercises[j].exerciseEquipmentLinkId);

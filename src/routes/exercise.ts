@@ -1,6 +1,5 @@
-import { Response, Router } from "express";
+import { Request, Response, Router } from "express";
 import pool from "../database";
-import RequestWithPayload from "../interfaces/RequestWithPayload";
 import authentication from "../middleware/authentication";
 import checkEmptyFields from "../middleware/checkEmptyFields";
 
@@ -21,11 +20,11 @@ exercise.post(
   "/add",
   checkEmptyFields,
   authentication,
-  async (req: RequestWithPayload, res: Response) => {
+  async (req: Request, res: Response) => {
     try {
       const { exerciseName, muscleGroupSelection, equipmentSelection } =
         req.body;
-      const userId = req.userId;
+      const userId = res.locals.userId;
 
       const addExercise = await pool.query(
         "INSERT INTO exercise_ (exercise_name, muscle_group_id, user_id) VALUES ($1, $2, $3) RETURNING *",
@@ -47,45 +46,41 @@ exercise.post(
 );
 
 // Get list of exercises user has added
-exercise.get(
-  "/view",
-  authentication,
-  async (req: RequestWithPayload, res: Response) => {
-    try {
-      const userId = req.userId;
+exercise.get("/view", authentication, async (req: Request, res: Response) => {
+  try {
+    const userId = res.locals.userId;
 
-      // Get list of exercises for user, stores them as arrays
-      const exerciseList = await pool.query(
-        "SELECT exercise_id, exercise_name, muscle_group_id FROM exercise_ WHERE user_id = $1 ORDER BY exercise_id",
-        [userId]
-      );
+    // Get list of exercises for user, stores them as arrays
+    const exerciseList = await pool.query(
+      "SELECT exercise_id, exercise_name, muscle_group_id FROM exercise_ WHERE user_id = $1 ORDER BY exercise_id",
+      [userId]
+    );
 
-      const response: ExerciseListInfo[] = [];
+    const response: ExerciseListInfo[] = [];
 
-      exerciseList.rows.forEach((element) => {
-        const responseElement = <ExerciseListInfo>{};
+    exerciseList.rows.forEach((element) => {
+      const responseElement = <ExerciseListInfo>{};
 
-        responseElement.exerciseId = element.exercise_id;
-        responseElement.exerciseName = element.exercise_name;
-        responseElement.muscleGroupId = element.muscle_group_id;
+      responseElement.exerciseId = element.exercise_id;
+      responseElement.exerciseName = element.exercise_name;
+      responseElement.muscleGroupId = element.muscle_group_id;
 
-        response.push(responseElement);
-      });
+      response.push(responseElement);
+    });
 
-      return res.json(response);
-    } catch (err: unknown) {
-      return res.status(500).json("Server error");
-    }
+    return res.json(response);
+  } catch (err: unknown) {
+    return res.status(500).json("Server error");
   }
-);
+});
 
 // Gets exercise information for a given exercise id
 exercise.get(
   "/view/:id",
   authentication,
-  async (req: RequestWithPayload, res: Response) => {
+  async (req: Request, res: Response) => {
     try {
-      const userId = req.userId;
+      const userId = res.locals.userId;
       const exerciseId = Number(req.params.id);
 
       // Ensure user accessing exercise info matches the user that added the exercise
@@ -112,7 +107,7 @@ exercise.get(
 
       const exerciseName = exerciseInfo.rows[0].exercise_name;
       const muscleGroupId = exerciseInfo.rows[0].muscle_group_id;
-      const equipmentIds = [];
+      const equipmentIds: number[] = [];
 
       const equipmentIdsRows = await pool.query(
         "SELECT equipment_id FROM exercise_equipment_link_ WHERE exercise_id = $1",
@@ -142,7 +137,7 @@ exercise.put(
   "/update/:id",
   checkEmptyFields,
   authentication,
-  async (req: RequestWithPayload, res: Response) => {
+  async (req: Request, res: Response) => {
     try {
       const exerciseId = Number(req.params.id);
       const { exerciseName, muscleGroupSelection, equipmentSelection } =
@@ -159,15 +154,15 @@ exercise.put(
         [exerciseId]
       );
 
-      const currEquipmentSelection = [];
+      const currEquipmentSelection: number[] = [];
 
       currEquipmentSelectionRows.rows.forEach((element) =>
         currEquipmentSelection.push(element.equipment_id)
       );
 
       // Compares current and new equipment selection, inserts and deletes rows based on changes
-      const equipmentSelectionAdd = [];
-      const equipmentSelectionRemove = [];
+      const equipmentSelectionAdd: number[] = [];
+      const equipmentSelectionRemove: number[] = [];
 
       equipmentSelection.filter((element: number) =>
         currEquipmentSelection.includes(element)
@@ -208,7 +203,7 @@ exercise.put(
 exercise.delete(
   "/delete/:id",
   authentication,
-  async (req: RequestWithPayload, res: Response) => {
+  async (req: Request, res: Response) => {
     try {
       const exerciseId = Number(req.params.id);
 
@@ -225,7 +220,7 @@ exercise.delete(
         [exerciseId]
       );
 
-      const linkIds = [];
+      const linkIds: number[] = [];
 
       equipmentLinks.rows.forEach((element) =>
         linkIds.push(element.exercise_equipment_link_id)
