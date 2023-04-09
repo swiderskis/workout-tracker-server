@@ -77,6 +77,8 @@ loginRegister.post(
 
       return res.json(token);
     } catch (err: unknown) {
+      console.log(err);
+
       return res.status(500).json("Server error");
     }
   }
